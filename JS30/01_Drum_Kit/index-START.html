@@ -7,6 +7,11 @@
 </head>
 <body>
 
+  <!-- Data Keys -->
+  <!-- Essentially added by HTML developers to allow you to add extra
+    attribs to HTML els. SYNTAX:  data-___="__"  
+    In this example, the data-key corresponds to the key code
+    used by JS to recognize keys on the keyboard-->
 
   <div class="keys">
     <div data-key="65" class="key">
@@ -58,7 +63,29 @@
   <audio data-key="76" src="sounds/tink.wav"></audio>
 
 <script>
+  function playSound(e) {
+    // using querySelector to select an audio element, and 
+    // using an attribute selector (attrib selector same as in CSS)
+    const audio = document.querySelector(`audio[data-key="${e.keyCode}"]`)
+    const key = document.querySelector(`.key[data-key="${e.keyCode}"]`)
+    if (!audio) return; // return in no audio
+    audio.currentTime = 0; // reset audio on each key press
+    audio.play();
+    key.classList.add('playing');
+  }
 
+  function removeTransition(e) {
+    // because we have multiple CSS properties we're changing, 
+    // we have MULTIPLE TransitionEvents, we will work with the longest
+    // one to prevent clipping other transitions
+    if (e.propertyName !== 'transform') return;
+    this.classList.remove('playing');
+  }
+
+  const keys = document.querySelectorAll('.key');
+  // must loop over elements when attaching event listeners
+  keys.forEach(key => key.addEventListener('transitionend', removeTransition))
+  window.addEventListener('keydown', playSound);  
 </script>
 
 
