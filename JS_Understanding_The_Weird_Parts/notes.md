@@ -13,7 +13,19 @@ Execution Context: A wrapper to help manage the currently running code.
 ### The Global Environment
 
 Whenever code is run, it's run within execution context (e.g. wrapped within the execution context). Base execution context is global execution context (JS engine creates for you Global Object and 'this' for you)
--Global object inside browsers, is the window object!
+- Global object inside browsers, is the window object!
 
 
+### Execution Context: Creation and 'Hoisting'
+- Hoisting: In JS, all declarations moved to the top of the current scope (or current script or current func); allowing us to use variables before declaration
 
+What's going on here?
+ - Execution context created in 2 phases:
+  - Creation phase: creates Global Object, 'this', Outer Environment
+  - Parses through code during creation phase, notes variablse and funcs, sets up memory space for them -- THIS IS HOISTING
+  - So, once code executed line by line, those vars and funcs already created in memory so they can be accessed.
+    - Note that variable assignment is executed line by line so variables can be accessed but they point to a placeholder, 'undefined'; 
+    - funcs are sitting in memory in their entirety after hoisting
+
+
+    
