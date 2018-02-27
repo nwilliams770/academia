@@ -39,21 +39,19 @@ What's going on here?
 ## Functions, Context, Variable Environments
 - Variable environment: where variables live in memory and how they relate to each other
 
-## The Scope Chain
+### The Scope Chain
 - Exery Execution Context has a reference to its Outer Environment
 - When running a line of code with a variable, if variable is not that Execution Context, JS 
 will look in reference to Outer Environment and that depends where function was written e.g. Outer (Lexical) Environment
 - **Scope Chain**: The chain of Outer Environment references.
 
-## Scope, ES6, and let
+### Scope, ES6, and let
 - **Scope**: Where a variable is available in your code and if its truly the same var or a new copy.
 - 'let' allows block scoping. Variable cannot be used until declared. And when variable defined in a block, can only be used in that block.
 
-## Async
+### Async
 - Other parts of the browser are handing async actions by JS engine such as rendering changes or HTTP requests but the JS engine is still synchronous!
 - Event Queue handles async actions but only after Execution stack is empty; the browser is populating the Event Queue
-- 
-
 
 
 
