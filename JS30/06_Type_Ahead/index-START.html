@@ -17,6 +17,62 @@
 <script>
 const endpoint = 'https://gist.githubusercontent.com/Miserlou/c5cd8364bf9b2420bb29/raw/2bf258763cdddd704f8ffd3ea9a3e81d25e2c6f6/cities.json';
 
+const cities = [];
+// fetch is a new API in browser, much like jQuery $get
+// returns a PROMISE, not the data itself
+// this raw data that we receive doesn't "know" what it is yet
+// WE KNOW its JSON but we have to convert it!
+// if we console log this blob, we can see the prototype
+// also see that there is a json() method we can call on it
+fetch(endpoint)
+  .then(dataBlob => dataBlob.json())
+  // we can't just update the value of cities because we set it an a const
+  // if we just push it, we'll push the entire array, ending up with nested array
+  // using the SPREAD OPERATOR, we can spread the data els into the cities array without double nesting
+  .then(data => cities.push(...data))
+
+function findMatches(wordToMatch, cities) {
+  return cities.filter(place => {
+    // here we need to figure out if city or state matches search params
+    // need to create a Regex (regular expression e.g. sequences of chars that define a serach pattern)
+
+    // pass it word to match and any flags you want, 
+    // g means global => looks through entire string for that RegEx
+    // i means insensitive => non-case-sensitive
+    const regex = new RegExp(wordToMatch, 'gi');
+    return place.city.match(regex) || place.state.match(regex);
+  })
+}
+
+  function numberWithCommas(x) {
+    return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  }
+
+function displayMatches() {
+  const matchArray = findMatches(this.value, cities);
+  const html = matchArray.map(place => {
+    const regex = new RegExp(this.value, 'gi');
+    const cityName = place.city.replace(regex, `<span class="hl">${this.value}</span>`);
+    const stateName = place.state.replace(regex, `<span class="hl">${this.value}</span>`);
+    
+    return `
+      <li>
+        <span class="name">${cityName}, ${stateName}</span>
+        <span class="population">${numberWithCommas(place.population)}</span>
+      </li>`;
+  }).join('');
+  // ^ map returns array and we just want a string so we use join('') to do so
+  suggestions.innerHTML = html;
+}
+
+const searchInput = document.querySelector('.search');
+const suggestions = document.querySelector('.suggestions');
+
+// change event only fires when you click outside of input, not on key up
+searchInput.addEventListener('change', displayMatches)
+searchInput.addEventListener('keyup', displayMatches)
+
+
 </script>
   </body>
 </html>
