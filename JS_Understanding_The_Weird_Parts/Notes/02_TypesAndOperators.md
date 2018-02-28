@@ -27,4 +27,7 @@ ex: let isNew = true; isNew = 3; isNew = "hey!"
 - Rule of thumb: Do comparisons for things that you know will be the same type. Only use '==' if you EXPLICITLY want to coerce the values. * same with '!=' and '!=='
 
 ##Existence and Booleans
-- 
+- Just note that 0 will eval to false; something to be mindful of when taking advantage of coersion.
+
+## Default Values
+- JS doesn't mind if you invoke a function without the expected parameters, they will be set to undefined if not provided a default value.
