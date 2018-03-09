@@ -78,4 +78,29 @@
   }(window, 'John'));
 
 ### Closures
+- A function created or returned by another function will contain a reference to its encompassing function, even if that functions execution context is no longer in the stack!
+- That means we will have references to variables passed in the outer function
+- The execution context 'closed in' it's outer variables, this phenomenon is called a closure!
+- Closures frequently used for factories. A Factory is just a function that returns or makes other things for you (usually other functions)
+
+### call(), apply(), bind()
+- A function is just an object, and all funcs have access to these three methods, all relating to 'this' variable
+- Whenver you bind a function, the JS engine actually duplicates that func, changing the 'this' variable to the object we've bound the func to.
+
+ - call() vs (). Does not copy function like bind, but executes it. 
+ - However, you can pass in a 'this' variable to call, as well as arguments! 
+
+ -apply() wants an ARRAY of parameters, where as call() accepts a list of params. Other than that they're the same
+
+
+ - function borrowing: person.getFullName.apply(person2)
+  - getFullName function uses 'this' so by calling it and applying person2 as the 'this' variable, we essentially let person2 borrow and execute the method from person!
+
+- function currying: creating a copy of a function but with some preset parameters.
+  - multiply.bind(this, 2) ==> passing arguments to bind sets PERMANENT parameters for the copied version of function
+  - You can have some fundamental math functions and then create variations by using currying
+
+### Functional Programming
+- Think and code in terms of functions
+- Underscore.js: library that helps with arrays and collections of objects; lodash also a similar library
 
