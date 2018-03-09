@@ -68,4 +68,14 @@
 })
 
 #### IIFEs and Safe Code
-- 
+- When creating something reusable, you can wrap code in IIFE in order to prevent any potential variable collisions
+- Vars in IIFE not hoisted, only live in that funcs Execution Context (not putting it into the global object)
+
+-EX: You can still work with global object however, just pass it in!
+  (function(global, name) {
+    let greeting = 'hello';
+    global.greeting = 'hello';
+  }(window, 'John'));
+
+### Closures
+
