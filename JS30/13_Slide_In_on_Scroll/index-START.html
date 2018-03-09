@@ -57,7 +57,33 @@
         if (callNow) func.apply(context, args);
       };
     }
+    
+    const sliderImages = document.querySelectorAll('.slide-in');
 
+    function checkSlide(e) {
+      console.log(window, scrollY);
+      console.count(e);
+      sliderImages.forEach(slideImage => {
+          // half way through the image
+        const slideInAt = (window.scrollY + window.innerHeight) - // where the BOTTOM of the window is at
+          slideImage.height / 2; // we want it to animate when slider image is peaking by 50%
+          // bottom of image
+        const imageBottom = slideImage.offsetTop + slideImage.height; // (distance from top of window to top of image) + height of image itself
+
+        const isHalfShown = slideInAt > slideImage.offsetTop;
+        const isNotScrolledPast = window.scrollY < imageBottom;
+        
+        if (isHalfShown && isNotScrolledPast) {
+          slideImage.classList.add('active');
+        } else {
+          slideImage.classList.remove('active');
+        }
+      });
+    }
+    // we add debounce function because we don't want our checkSlide func running
+    // so frequently. Func will run at most once/20ms, optimizes performance.
+    // almost always want to use debounce for SCROLL EVENT functions
+    window.addEventListener('scroll', debounce(checkSlide));
   </script>
 
   <style>
