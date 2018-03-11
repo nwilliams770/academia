@@ -8,7 +8,10 @@
 
   <script>
     // start with strings, numbers and booleans
-
+    age = 2;
+    age2 = age;
+    age = 3;
+    // age2 still equals 2, makes a copy, not referencing same space in memory
     // Let's say we have an array
     const players = ['Wes', 'Sarah', 'Ryan', 'Poppy'];
 
@@ -16,7 +19,12 @@
 
     // You might think we can just do something like this:
 
+    let team = players;
+
     // however what happens when we update that array?
+
+    team[3] = 'John'; // this will modify the original array!
+    // team is just a reference to the original array, players
 
     // now here is the problem!
 
@@ -27,14 +35,18 @@
     // So, how do we fix this? We take a copy instead!
 
     // one way
-
+    team = players.slice();
     // or create a new array and concat the old one in
-
+    team = [].concat(players);
     // or use the new ES6 Spread
+    team = [...players]
+
+    // spread will take every item out of your iterable and put it into the containing arrays
 
     // now when we update it, the original one isn't changed
 
     // The same thing goes for objects, let's say we have a person object
+    team = Array.from(players);
 
     // with Objects
     const person = {
@@ -43,13 +55,18 @@
     };
 
     // and think we make a copy:
+    const captain = person;
+
+    // we made a reference to person, not a copy!
 
     // how do we take a copy instead?
-
+    const captain = Object.assign({}, person, {age: 12});
+    //  can fold in new properties in the third argument.
     // We will hopefully soon see the object ...spread
 
     // Things to note - this is only 1 level deep - both for Arrays and Objects. lodash has a cloneDeep method, but you should think twice before using it.
 
+    // there is a clone deep function to do deep level duplication 
   </script>
 
 </body>
