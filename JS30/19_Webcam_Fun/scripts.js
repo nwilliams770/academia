@@ -81,11 +81,11 @@ function greenScreen(pixels) {
   });
 
   // iterate through each of those pixels
-  for (i = 0; i < pixels.data.length; i = i + 4) {
-    red = pixels.data[i + 0];
-    green = pixels.data[i + 1];
-    blue = pixels.data[i + 2];
-    alpha = pixels.data[i + 3];
+  for (let i = 0; i < pixels.data.length; i+= 4) {
+    let red = pixels.data[i + 0];
+    let green = pixels.data[i + 1];
+    let blue = pixels.data[i + 2];
+    let alpha = pixels.data[i + 3];
 
   // check to see if that pixel, the R G and B values are between our min/max range
   // if not then we remove it
