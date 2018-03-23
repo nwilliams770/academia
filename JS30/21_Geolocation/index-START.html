@@ -58,6 +58,24 @@
     /*Compass: https://thenounproject.com/search/?q=compass&i=592352*/
   </style>
   <script>
+
+    const arrow = document.querySelector('.arrow');
+    const arrow = document.querySelector('.speed-value');
+    
+    navigator.geolocation.watchPosition((data) => {
+      // update speed with current; watchPosition watches over time
+      speed.textContent = data.coords.speed;
+
+      // update arrow
+      arrow.style.transform = `rotate(${data.coords.heading}deg)`;
+
+      // need to provide error func for callback
+    }, (err) => {
+      console.err(err);
+      alert("You denied access to geolocation");
+    }
+    
+    );
   </script>
 </body>
 </html>
