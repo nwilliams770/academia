@@ -54,7 +54,21 @@
   </div>
 
 <script>
+  const nav = document.querySelector("#main");
+  const topOfNav = nav.offsetTop;
 
+  function fixNav () {
+    if (window.scrollY >= topOfNav) {
+      // when we add the fixed-nav class, nav position becomes fixed so we have to add padding
+      // to adjust for the 'reflow' of items
+      document.body.style.paddingTop = nav.offsetHeight
+      document.body.classList.add('fixed-nav');
+    } else {
+      document.body.classList.remove('fixed-nav');      
+    }
+  }
+
+  window.addEventListener('scroll', fixNav);
 </script>
 
 </body>
