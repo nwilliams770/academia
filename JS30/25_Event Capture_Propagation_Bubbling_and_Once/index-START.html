@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Understanding JavaScript's Capture</title>
+</head>
+<body class="bod">
+
+  <div class="one">
+    <div class="two">
+      <div class="three">
+      </div>
+    </div>
+  </div>
+
+<style>
+  html {
+    box-sizing: border-box;
+  }
+  *, *:before, *:after { box-sizing: inherit; }
+
+  div {
+    width:100%;
+    padding:100px;
+  }
+
+  .one {
+    background: thistle;
+  }
+
+  .two {
+    background:mistyrose;
+  }
+
+  .three {
+    background:coral;
+  }
+</style>
+
+<button></button>
+<script>
+  const divs = document.querySelectorAll('div');
+
+  function logText(e) {
+    // browser will know what you clicked on but that event will
+    // ripple all the way up to the top of the document and trigger clicks
+    // on those els as well. You may not be listening to those clicks on other
+    // els but they will occur nevertheless!
+
+    // TAKEAWAY: If you are listening for a click on multiple nested elements, 
+    // a click will be triggered for all of them!
+
+    // IN JS 
+    // Browser will do a 'CAPTURE'; when you click on el it will 
+    // ripple from top of doc down and capture those events
+    // then it starts on lowest el and starts a BUBBLE
+    // events BUBBLE UP, so they will fire as the bubble moves up
+
+    console.log(this.classList.value);
+
+    // this prevents the event from bubbling up
+    e.stopPropagation();    
+  }
+
+  divs.forEach(div => 
+    div.addEventListener('click', logText, {
+      capture: true,
+    // we can pass a third optional, OPTIONS OBJECT 
+    // by setting capture to true, the function will be executed
+    // during capture (top down) as opposed to the bubble (bottom up)
+      
+      once: true
+      // listens for event then it will unbind itself!
+      // will only run once and only once!
+      // VERY NEW TO MODERN BROWSERS
+    }))
+
+</script>
+</body>
+</html>
