@@ -17,3 +17,17 @@
       in other file...
       let greet = require(./greet);
       greet();
+
+## JavaScript Aside: Function Constructor
+- **Function constructor**: A function that is used to create objects, implicity returns a new object. This is declared with the "new" keyword. 
+      - EX: function Person(firstname, lastname) {
+            this.firstname = firstname;
+            this.lastname = lastname
+      }
+
+      - We can now create a new one! var nicolas = new Person("nicholas", "williams") 
+      - Also change prototype of Person:
+            - Person.prototype.greet = function() {
+                  console.log("hello" + this.firstname)
+            }
+
