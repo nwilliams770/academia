@@ -30,4 +30,10 @@
             - Person.prototype.greet = function() {
                   console.log("hello" + this.firstname)
             }
+## By Reference vs By Value
+- In JS, when pass a primitive value into a function, the passed in parameter in duplicated in memory; this is called by value
+- When we pass in an object to a function, the parameter points to the SAME spot in memory as the object; no new copy of the object is made, two variables now point to same variable. This is by reference.
 
+## IIFE (Immediately Invoked Function Expressions)
+- Modules are not just re-usuable blocks of codes but also code that is protected that doesn't affect other code. Eg. SCOPE
+- **Scope**: Where in code can you have access to a particular var or function. 
