@@ -55,4 +55,13 @@ Even cleaner we can put the ng-repeat directly on the custom directive!
 - 'Compile' and 'Link': compiles converts and linker generates file computer interacts with. NOT what happens in Angular
 - compile is a property we can add to our directive object and it accepts a function with elem and attrs as parameters
   - elem is the HTML structure of the directive, we can interact with it before it is added to the DOM
-  - it returns an object with two properties: pre(link) and post(link)
+  - it returns an object with two properties: pre(link) and post(link), both expect functions and have three params: scope, elem, and attribs; for all intents and purposes, only use post, pre is dangerous
+- When do you want to use these hooks? When the amount of work you need to do with the data is more involved than what you can do in the view. Perhaps we want to add some listeners, or process data based on some complex logic.
+- Compile is to edit the HTML of the directive before it's used and returns pre and post list object functions that deal with the instance of the directive being used. 
+- Instead of using an empty compile return a pre function, we can just use the link property on our directive object
+- NOTE: the link function runs every time an instance of the directive is created so PERFORMANCE IN THAT FUNCTION IS IMPORTANT
+
+#### Understanding 'Transclusion'
+- **Transclusion**: Including one document inside another. Place a document inside another at particular point.
+- Let's say we'd like to insert some HTML onto a directive we are using, but only for a specific view. We don't want to create an entirely new directive just for that small piece, so we can use transclusion to add the extra HTML. 
+- we first add transclude: true to our directive object; we also must add <ng-transclude></ng-transclude> to our directive, that will define where the HTML sits (we can also add ng-transclude as an attribute to an html tag instead) 
