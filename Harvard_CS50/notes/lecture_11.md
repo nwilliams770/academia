@@ -1,0 +1,17 @@
+## Lecture 11: JavaScript
+- big difference we see between JS and Python is the existence of lamda functions (anonymous functions). but we have do while loops again!
+- Allows us to make adjustments to the DOM after code has left our server and loaded onto client's browser
+- When working on forms, we can give our input fields name attributes and can easily access them through dot notation just by having selected the form
+- AJAX: browsers executing http requests after the page has initially loaded and leverages an important JS feature, callbacks!
+- another global object in the browser othan that `document` is `navigator` -- comes with a big API to use geolocation services
+- JavaScript:
+    - Objects are a lot like structs in C, but objects can have METHODS `function (object)` vs `object.function()`
+    - we still have for loops but we can use diff syntax to dictate what we want to iterate over
+        - for each ONLY for arrays, can iterate the els as well as index
+        - for in is for iterating through properties of an object, gives access to the keys
+        - for of for iterating over "iterable collcetions" like arrays, strings, NodeLists
+- AJAX:
+    - Async JavaScrpt and XML allows use to dynamically update a webpage even more dynamically!
+        - just a small portion of page is updating as opposed to ENTIRE page
+    - central to this ability is using a special JS object called XMLHTTPRequest
+        - once have this obj, we have to define its `onreadystatechange` behavior (this is a func that is called when the async HTTP request has completed)

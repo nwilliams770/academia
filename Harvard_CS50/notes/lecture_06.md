@@ -1,0 +1,64 @@
+## Lecture 6
+- Classic question: What happens when we type facebook.com
+    - Back in the day we used 'www.' to indicate this was for a website
+    - HTTP is a protocol that determines how the clients talks to the web server
+- IP addresses is 4 ints from 0 to 255 (EX: 0.0.0.0, 255.255.255.255) -- 32-bits
+- DCHP -- another protocol that actually has a device send request for an IP address and a server responds, assigning one from an available pool of addresses
+- `nslookup WEB-ADDRESS` command will get us the IP address of a specific web address
+- `traceroute WEB-ADDRESS` see the path of routers from origin to destination
+- How does a server know what the request/type of information is? We need another piece of info: TCP (Transmission Control Protocol) => there is a list of different codes that specify what info we have or what we want to do
+- Sometimes packets of information get lost on the way; buffers can overload or many requests can be happening at once
+    - TCP comes into play; each fragment of information will be numbered or ordered and the TCP protocol will make ANOTHER request for any envelope that didn't make it
+
+- A quick overview:
+    - IP Address: just a means for your machine to uniquely identify itself to send and receive information
+    - If each IP Address is 32-bits, there's roughly 4 billion addresses. We've been slowly phasing out 32-bit address and moving to 128-bit ones (IPv4)
+    - DHCP
+        - How do we get an IP address? Somewhere between your machine and internet is a DHCP (Dynamic Host Config Protocol) server that assigns them
+    - DNS
+        - DNS (Domain Name System) helps us translate IP addresses to more memorable names. Like the yellow pages of the web
+        - DNS servers are largely de-centralized
+    - Access Points
+        - IP address assigned to a router, whose job it is allow data requests for all devices on your local network to be processed through a single IP address
+        - Modern networks have access points that combine multiple technologies while business wide-area networks (WANs) still have seperate devices to allow easier scaling
+- IP:
+    - Internet is just an interconnected network of smaller networks woven together and agreeing upon mutual communication
+    - They communicate via IP (Internet Protocol)
+    - We still greatly rely upon phyiscal, wired, connections to transmit large volumes of data and there's no way we can connect EVERY network to every other network
+    - But we still need every network to talk to each other and this is where **routers** come into play
+        - each network connected to X amount of routers, which are in turn connected to some other networks and routers, and each router has intructions built in on how to move the info to its destination
+        - this routing info is usually stored in a routing table, inside the router
+        - Another crucial part of IP is splitting data into **packets**
+            - sending large data packets has potential to create a ripple effect to that would throttle the network for all others
+            - also, if anything gets lost, we lose ALL the data, smaller packets is faster and allows us to easily replace a packet if it gets lost for some reason
+        - IP is a connectionless protocol. Not a strictly defined path from sender to receiver
+            - Means that, in response to traffic that might be clogging up one route, packets can be "re-routed" around the jam to follow the optimal path, based on the current state of the network
+- TCP: 
+    - Tramission Control Protocol
+    - IP is protocol for getting info from sending machine to reveiving machine, TCP is directing trasmitted packet to the correct program on the receiving machine
+    - Important to know BOTH where the receiver is and what the packet is so TCP and IP are practically inseparable pair: TCP/IP
+    - TCP **guarantees** delivery
+        - Does so by including how many packets receiver should expect, the order of them, and transmits that info alongside the data
+    - Each program/utility/service is assigned a **port number** so coupled with an IP address, we can now uniquely identify a specific program on a specific machine
+        - EX of standardized port #s: 
+            - FTP (file transfer) port 21
+            - SMTP port 25
+            - DNS port 53
+            - HTTP port 80
+            - HTTPS 4443
+    - Steps of TCP/IP
+        - When program sends data, TCP breaks it into smaller chunks and communicates packets to network, adding TCP layer onto the packet
+        - IP routes each packet, from sender the receiver, wrapping it with the IP layer (where its going)
+        - When received, TCP looks at header to see which program it belongs to, and since routes of the packets may differ, TCP must also order the packets when preseting them to their destination
+    - If any pointer, a router using IP drops a packet, TCP would use the additional info inside the headers to request a replacement packet
+    - After packets arrived, TCP ensures they're organized and can be reassmbled, then delivers to the correct service
+- HTTP: 
+    - Hyper Text Transfer Protocol
+    - In addition to protocols that dictate how info is communicated from machine to machine or app to app (IP and TCP, respectively), it is often that the program itself has a set of rules for how to interpret data that was sent
+    - HTTP is one such ex of an **application layer protocol** which dictates format by which clients request web pages from a server and the format via which servers return info to client
+    - Other app layer protocols:
+        - FTP
+        - Simple Mail Transfer (SMTP)
+        - Remote Desktop (RDP)
+    - EX of HTTP request line:
+        - method request-target http-version
