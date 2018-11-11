@@ -1,0 +1,47 @@
+{% extends "layout.html" %}
+
+{% block title %}
+    Portfolio
+{% endblock %}
+
+{% block main %}
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Symbol</th>
+                <th>Shares</th>
+                <th>Value</th>
+                <th>Actions</th>
+                <th>TOTAL</th>
+            </tr>
+        </thead>
+        <tfoot>
+            <tr>
+                <td col-span="4">CASH</td>
+                <td>{{ total | usd }}</td>
+            </tr>
+        </tfoot>
+        <tbody>
+            {% for stock in stocks %}
+                <tr>
+                    <td>{{ stock.symbol }}</td>
+                    <td>{{ stock.total_shares }}</td>
+                    <td>{{ prices[stock.symbol]["price"] | usd }}</td>
+                    <td>
+                        <form action="/buy" method="post">
+                            <input type="hidden" name="symbol" value="{{ stock.symbol }}"/>
+                            <input type="number" name="shares" min="1" placeholder="0" style="width: 30px" required />
+                            <button class="btn btn-sm btn-primary" type="submit">Buy</button>
+                        </form>
+                        <form action="/sell" method="post">
+                            <input type="hidden" name="symbol" value="{{ stock.symbol }}"/>
+                            <input type="number" name="shares" min="1" placeholder="0" style="width: 30px"required />
+                            <button class="btn btn-sm btn-primary" type="submit">Sell</button>
+                        </form>
+                    </td>
+                    <td>{{ prices[stock.symbol]["price"] * stock.total_shares | usd }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endblock %}
