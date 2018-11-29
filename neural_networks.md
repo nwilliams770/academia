@@ -48,3 +48,39 @@
     - To summarize the whole network: We feed in data and perform several matrix operations on this data, layer by layer. For each layer, we take the dot product of the input by the weights and add a bias then pass that output through an activation function we choose. This is done three more times since we have three layers. Final output is y-hat, which is prediction of what wine belongs to which cultivar. This is the end of the forward propagation process.
 
     We then calculate difference between the y-hat and the expected output and use this error during backpropagation. We mathematically push our error back through the NN--taking derivative of functions used in the forward propagation, we try to discover the value of our weights for the best possible prediction. 
+
+    ## Recurrent Neural Networks
+- Key feature is that they have loops, allowing information to persist. Imagine multiple copies of the same network each passing a message to a successor. The loop can be 'unfolded' per se
+- Because of this structure, they're the natural structure to use when input is sequences and lists
+- Before we discuss them further, let's talk about **Word2Vec**:
+    - model used for learning vector representations of words called 'word embeddings'. Typical to do as a preprocessing step before feeding vectors into a model (usually a RNN) to generate predictions and patterns
+    - In image and audio processing systems, info is encoded resulting in relations between various entities in the system
+    - For natural language processing (NLP), words are unique and discrete symbols. This can, our model can leverage very little of one symbol when learning about another
+        - Because of this, we need more data and vector representations can help address some of this because deep learning, at most basic level, is all about representational learning
+        - One way to represent them is a co-occurence matrix but most famous way of representation is Word2Vec
+    - Vector space models (VSMs) 'embed' words in a continuous vector space where semantically similar words are mapped to nearby points ('embedded near each other'). 
+    - Depend on the Distributional Hypothese, states that words that appear in same contexts share semantic meaning. Different approaches to leveraging this principle are:
+        - Count-based methods (Latent Semantic Analysis): compute how often some word occurs with neighbor words in a large corpus and maps these down to a small, dense word vector for each word
+        - Predictive methods (Neural PRobabilistic Language Models): Try to predict a word from its neighbors in terms of small, dense embedding vectors (considered params of the model)
+    - Word2Vec is an efficient predictive model in two flavors: Continuous Bag-of-Words model (CBOW) and Skip-Gram model. CBOW predicts target words from source context words, skip-gram does inverse and predicts source context-words from target words
+    - Our focus will be on skip-gram model
+    - Predictive models traditionally training using Maximum Likelihood principle to maximize probability of next word wt (for "target") given previous words h (for "history") in terms of a softmax func
+    - It is quite costly to do this for EVERY word as it requires looking at every other word, so for feature learning in word2vec, we use a binary classification objective (logistic regression) to discrimibate real target words from noise words
+    - This objective maximized when model assigns high probabilities to real words and low ones to noise words, this is technically called Negative Sampling. Appealing to us because loss functions now scales only with number of noise words, not all wrods in vocab
+    - Objective func defined over entire dataset but typically optimize this with stochastic gradient descent using one example at a time or a minibatch of batch_size samples, typically between 16 and 512
+- RNNs are more exciting than a CNN because they allow us to operate over sequences of vectors: sequences in input, output, or in most cases both
+- Do how do they work?
+    - Input is vector x, output is vector y. output is influenced not only by input but by entire history of inputs fed in the past
+    - as we feed in input, we are calling a step func, which updates the hidden state which is then squashed to values in the range [-1, 1] via np.tanh
+        - one value inside that tanh is based on previous hidden state and the other is based on current input
+    - In the field, most use a particular type of RNN called a Long Short-Term Memory network (LSTM)--pretty much the same as a Vanilla RNN we reviewed but computing the update is a bit more complicated
+- In very general terms, Forward-Propagation is done to get output of your model and check its correctness e.g. to get the error
+- Next Backward-Propagation is done, going backwards through the neural network to find partial derivative of the error with respect to the weights, which enables you to subtract this value from the weights
+    - Those derivatives are used by the Gradient Descent algo, and adjusts weights up or down
+- Backpropagation Through Time is doing backpropagation on an unrolled RNN, essentially allowing you to visualize and understand what's going on in the network
+- Issues with standard RNNs:
+    - exploding gradients: algo assigns super high importantance to weights without much reason, usually solved through squashing the gradients
+    - vanishing gradient: values of gradient too small and model stops learning, solved through concept of LSTM networks
+- LSTM's enable RNNs to remember their inputs for long periods of time. 
+    - This memory can be read, written, and deleted based on the importance assigned to the information stored (these are described as 'gates')
+    - 
