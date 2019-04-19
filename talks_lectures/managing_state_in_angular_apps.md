@@ -1,0 +1,18 @@
+Given by Victor Savkin
+- Types of state:
+    - Server state: Not technically a part of Angular application but we need to deal with it so keep it in mind
+    - Persistent State: Subset sort of server state on client end, sort of a cache of the server state. Note that in most cases though, we want to do domestic updates. E.g. update something in persistent state then later update server state, and hopefully they reconcile!
+    - Client state: Not stored of server. good practice to reflect both persistent and client state in the url
+    - URL or router state: With that recc
+    - Transient client side: state we store for the client but NOT in the URL. EX: youtube videos that pick up from where you last watched them.
+    - Local UI state: local components can have local UI state and usually derived from other types of state, like a button color
+- State Synchronization: Why Though?
+    - We need to sync because we have the same info stored multiple places. Server state and persistent state as well as persistent state, client state, and url/router state. 
+    - Problem: Syncing persistent state and server state:
+        - Let's say we want to submit a rating. Currently our backend has no code for an (inevitable) request failure. Our persistent state updated domestically on client side yet it is really not stored in our backend
+        - We can do something like, when an error occurs, we throw and error to our frontend and reset the rating to NULL. BUT, consider this monkey wrench:
+            - User sends two requests in a short amount of time, maybe they misclicked and entered the wrong rating or somthing. One request fails and one is successful--there is NO guarantee which response from the backend will come first so if our error message comes last, we reset rating to NULL on client side even though the successful request updated the server state. We are now out of sync!
+    - Problem: Syncing URL and Client state
+        - Same problem as previously, multiple requests within a short time of eachother can disrupt the synchronization of these two states because there's no guarantee in what order responses come back
+    - Even with these errors, these faulty componenents will more than likely pass both unit and end-to-end tests
+- 
