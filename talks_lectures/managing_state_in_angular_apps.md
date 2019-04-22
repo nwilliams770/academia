@@ -14,5 +14,24 @@ Given by Victor Savkin
             - User sends two requests in a short amount of time, maybe they misclicked and entered the wrong rating or somthing. One request fails and one is successful--there is NO guarantee which response from the backend will come first so if our error message comes last, we reset rating to NULL on client side even though the successful request updated the server state. We are now out of sync!
     - Problem: Syncing URL and Client state
         - Same problem as previously, multiple requests within a short time of eachother can disrupt the synchronization of these two states because there's no guarantee in what order responses come back
-    - Even with these errors, these faulty componenents will more than likely pass both unit and end-to-end tests
-- 
+- Even with these errors, these faulty componenents will more than likely pass both unit and end-to-end tests. Why? Because most tests, unless explicity designed to, don't test race conditions in which these errors occur
+- To sum it up: 
+    - State management and side effects aren't separeted
+    - No clear sync strategy of the persistent state and server
+    - No clear sync strategy of client state and url
+    - Our model is mutable
+- Some solutions
+    - Separate services/computation from state management:
+        - Using a separate state management library such as redux, we can create a model where:
+            - Components dispatch actions to Store that can update state based on those actions and effect classes and can execute actions to sserver based on actions coming from components
+            - Use immutable data for persistent and client state, we create a new copy of our data in the reducer and return an entirely new state. Why? Because it is shared across multiple components and different parts of app
+            - Effects class using RxJS Observable to get rate actions and with each action, makes request. If request fails, we dispatch a new action
+            - note `concatMap`, will wait for response before sending new request. Because we have a single Observable for all actions, we can use concatMap to order/linearize the requests
+            - Optimistic updates should always have special, separate actions to deal with errors
+            - State management done by reducers and side-effects handled by Effects classes, clear UNDO strategy, no more race conditions with `concatMap`
+            - NgRX/Redux means of successful state management, not a guarantee!
+    - Synchronizing URL and client state
+        - Always treat Router (url) as the source of truth! Why? Because the user can always update the URL directly. App has to support both case of using a back button AND user manually changing url
+        - The data flow we want: Component calls Navigate => Router updates Location => Store/Effects get notified => Store updates its state => Componenet gets new state
+        - We are going to emit an event called "ROUTER NAVIGATION", our Effects class will listen to that event and fetch the data, but we are using `switchMap` not `concatMap`, why?
+            - `switchMap` only handles the latest value, if a new action appears, we no longer care about the previous one.
