@@ -35,3 +35,28 @@ Given by Victor Savkin
         - The data flow we want: Component calls Navigate => Router updates Location => Store/Effects get notified => Store updates its state => Componenet gets new state
         - We are going to emit an event called "ROUTER NAVIGATION", our Effects class will listen to that event and fetch the data, but we are using `switchMap` not `concatMap`, why?
             - `switchMap` only handles the latest value, if a new action appears, we no longer care about the previous one.
+        - To sum up:
+            - Updating via UI or Location (URL) is the same
+            - Componenets dispatch actions and react to state changes, doesn't have any other complex logic or concerns
+            - No race conditions (switchMap)
+    - From these practices we start a flesh out a Clear Design
+        - Componenets are only responsible for the UI:
+            - They render UI
+            - They dispatch actions
+            - They react to state changes
+            - Reads and writes are separated
+        - Stores / Reducers are only responsible for state management
+            - They are synchronous
+            - They are pure functions
+            - They are atomic
+            - Modeled like a database
+        - Effects and NgRx are only responsible for managing side effects
+            - They are async
+            - They use RxJS
+            - Modelled like messaged-based middleware
+    - Summary:
+        - Ad-hoc solutions don't fully work
+        - To fix issues we: 
+            - Switched to NgPx and immutable data
+            - Made Router the source of truth
+        - Main takeaway: be deliberate about how you manage state!
