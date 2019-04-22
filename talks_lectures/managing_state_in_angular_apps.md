@@ -60,3 +60,4 @@ Given by Victor Savkin
             - Switched to NgPx and immutable data
             - Made Router the source of truth
         - Main takeaway: be deliberate about how you manage state!
+    
