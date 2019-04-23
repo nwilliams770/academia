@@ -1,0 +1,31 @@
+## What are the tradeoffs between using MobX and Redux?
+- Redux & Mobx:
+    - Open-source client-side state management libs
+    - Describe UI as a function of state
+    - No relation to React although they play nice with it
+- Redux, is like derivation of the Flux architecture:
+    - Flux had a one-way dataflow:
+        - Something occurs in the View, which propagates an action, action gets sent to store via callback that store registers to dispatcher, then store updates its state
+    - Redux has 3 main differences:
+        - As opposed to multiple stores, we have 1 store, one huge POJO 
+        - No concept of dispatchers, uses pure functions
+        - Store/state is immutable
+- Mobx
+    - observable values are essentially your state, Mobx wraps your data is observables which gives it observable capabilities, look at these like your spreadsheet cells
+    - Then theres derivations:
+        - Computed values, pure functions that derive state off your data, think of them as formulas in a spreadsheet, they produce new values
+        - Reactions, similar to computed values but instead they create a side-effect, not a new value
+- Comparing, we have (Redux | Mobx):
+    - Single store / Domain class | Multi-store / Domain class
+    - POJOs | Observable data
+    - Immutable | Mutable
+    - Normalized state | Nested state
+    - Manually track updates | Automatically tracks updates
+    - Explicit | Implicity
+    - Passive | Reactive
+    - Read-only state (prevState, action), Pure => newState | Read and write state => state, Impure
+    - Actions required, must fire an action to know what to do to the state | Actions not required, observable data can accept data from anywhere, do not necessarily need actions
+    - Normalize state, because immutable data, all ancestors of the state tree, even one's not being changed, need to be copied and updated as well, can cause Redux-connected UI components to re-render the UI even though concerned-with state didn't change | Keep state denormalized because you have computed values and tracked functions, so Mobx automatically keeps track of what you care about
+- So what's the takeaway:
+    - Mobx: more suited for a simpler application, rapid prototyping, small team, easier learning curve. Because it is reacting to state changes, good for real-time systems, dashboards, text editors, presentation software, NOT for event-based 
+    - Redux: reacting to actions or events: business apps, event-based systems, game events involving a complex reaction
