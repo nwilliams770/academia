@@ -1,0 +1,21 @@
+# Reasons Web Components are good for a big company
+- "Web components are a set of web platform APIs that allow you to create new custom, reusable, encapsulated HTML tags to use in web pages and web apps. Custom components and widgets build on the Web Component standards, will work across modern browsers, and can be used with any JavaScript library or framework that works with HTML"
+- Reasons why:
+    - 1. Be standard and framework agnostic
+        - Standardized technology and natively supported in modern browsers, following Web Comp standards, one can create reusable and versatile new components w/o code collisions
+        - Liberated from volatile landscape of front-end frameworks and tooling
+    - 2. Sharing components across company
+        - Ideal for sharing elements across a large org or building a UI design system
+    - 3. Seamlessly interoperable
+        - Use a set of standardized APIs that are natively supported in all modern browsers (desktop + mobile browsers)
+        - Can create custom elements that work on any site, interoperate seamlessly with brower's built-in elements, and play nicely with frameworks
+        - With that you can:
+            - Use web components anywhere you use HTML, in your main doc, a CMS, Markdown, or framework
+            - breaking up app into smaller componenets, cleaner and less expensive to maintain
+    - 4. Simplicity and easy adoption
+        - Libraries like LitElement, make Web Comps easier to use and highlight best pratices
+        - Simple learning curve
+    - 5. Simple to customize
+        - By definition, Web Comps faciliate customizable contexts. In a big compnay, where each company, location, or app context can have differences, visual or functional, this capacity is great to avoid having similar components but repeated again in each new context
+            - customization at component level: look and feel and/or functionality
+            - customization at app level to driver user-experiences: configure layout of components depending on type of user, country, whatever
