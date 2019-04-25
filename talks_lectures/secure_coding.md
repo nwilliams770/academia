@@ -1,0 +1,96 @@
+# Secure Coding
+## Overview of common issues and best practices
+- 1. Injection
+    - "Injection flaws, such as SQL, NoSQL, OS, and LDAP injection, occur when untrusted data is sent to an interpreter as part of a command or query. The attacker’s hostile data can trick the interpreter into executing unintended commands or accessing data without proper authorization.” aka Lil' Bobby Tables
+    - Prevention:
+        - Whitelist input validation
+        - Use of a safe API which avoids use of the interpreter or provdies a parameterized interface. 
+        - Contextually escape user data taking note of language-specific needs
+- 2. Broken authentication
+    - Credentials stuffing: use of lists of known passings. If app does not implement automated threat or protections, app can be used as a password oracle to determine if credentials are valid.
+    - Brute force: algorithmic / automated credentials forging
+    - Weak passwords: allowing default or weak password
+    - Ineffective credential recovery - using weak "forgot password?" mechanisms, such as "knowledge-based answers"
+    - Prevention:
+        - validate: check for weak passwords, checking against top 10k worst/common passwords
+        - harden: ensure registration, credential recovery, and API pathways are hardened against account enumeration (using brute-force to guess or confirm valid users) attacks by using the same messages for all outcomes. 
+        - limit: limit or increasingly delay failed login attempts. log all failures and alert admins when attacks are detected
+        - make sure authentication is paid attention to on ALL platforms
+        - test browser cache weakness (caching sensitive info) by using back button
+        - testing for bypassing authentication schema 
+        - test for weaker authntication in alternative channel
+- 3. Sensitive Data Exposure
+    - transmititng sensitive data in clear text over insecure protocols (HTTP, FTP)
+    - storing sensitive data in clear text, including backups
+    - using old or weak crypto algorithms
+    - using default crypto keys; weak crypto keys generated or re-used; poor key management or rotation
+    - Not enforcing encryption e.g. browser security directives or headers are missing
+    - clients not verifying validity of server certificates
+    - Prevention:
+        - classify data and apply controls per classification
+        - do not store sensitive data unnecessarily
+        - store passwords using strong adaptive and salted hashing functions (refresh: random data that is used as an additional input to a hashing func) with a work factor (amount of time/iterations for a brute-force attack)
+- 5. Broken Access Control
+    - Unenforced restrictions on what authenticated users are allowed to do are often not properly enforced. Can be exploited to access unauthorized functionality such as access other users' accounts, view sensitive files, modify other users' data, change access rights
+    - Access Control (or Authorization) is process of granting or denying specific request from a user, program, or proceess. Involves act of granting and revoking priviledges
+        - Role Based Access Control (RBAC): modeling for controlling access where permitted actions are identified with roles rather than individual subject identities
+        - Attribute Based Access Control (ABAC) - will grant or deny user requests based on arbitrary attribs of the user or arbitrary attribs of the object, and environment conditions that may be globally recognized and more relevant to the policies at hand. 
+        - Design Principles:
+            - Design access contro thoroughly up front
+            - force all requets to go through access control checks
+            - deny by default
+            - principe of least priviledge: assign only necessary/minimal priviledges, purely based on job necessities
+            - don't hardcode rules
+            - log all access control events
+            - Prefer ABAC over RBAC
+                - BAD: 
+                    `if (user.hasRole("ADMIN")) || (user.hasRole("MANAGER")) { deleteAccount(); }`
+                - GOOD: 
+                    `if (user.hasAccess("DELETE_ACCOUNT")) { deleteAccount() }`
+            - Good access control is hard to add late in lifecycle. Work to get this right up front early on
+            - Turnkey security tools (service that is fully setup and ready to go) cannot verify access control since tools are not aware of your application poicy. Be prepared to do security unit testing and manual review for access control verfiication.
+- 6. Security Misconfiguration
+    - Most commonly seen issue. Commonly result of insecure default configurations, incomplete or ad hoc configurations, open cloud storage, misconfigured HTTP headers, and verbose error messages containing sensitive info
+    - Examples:
+        - Sample apps that are not removed from the production server
+        - Directly listing not disabled on the server. An attacker can find and download the compiled Java classes
+        - App server's config allows stack traces to be returned to users, this can potentially expose sensitive info or underlying flaws
+- 7. Cross-Site Scripting (XSS)
+    - Occurs whenever an app includes untrusted data in a new web page without proper validation or escaping, or updates an existing web page with user-supplied data using a browser API that can create HTML or JS. Allows attacker to execute scripts in victim's browser
+    - Types:
+        - Reflected XSS: application or API includes unvalidated or un-escaped user input as part of HTML output.
+        - Stored XSS: application or API stores unsanitized user input that is viewed at a later time by another user or admin. High or critical risk
+        - DOM XSS: JS frameworks, simple-page apps, and APIs that dynamically include attacker-controllable data to a page are vulnerable to DOM XSS. Possible is web app writes data to the DOM without proper sanitization
+        - Preventing: 
+            - never insert untrusted data except in allowed locations
+            - HTML escape before inserting untrusted data into HTML element content
+            - Attribute escape before inserting untrusted data into html common attributes
+            - JS escape, CSS escape, URL escape
+- Developing Secure App using JS:
+    - Untrusted data should only be treated as displayable text
+    - Always JS encode and delimit untrusted data as quoted strings when entering the app when building templated JS:
+        - `var x = "<%= Encode.forJavascript(untrustedData) %>";`
+    - Use `document.createElement("...")`, `element.setAttribute("...", "value")`, `element.appendChild(...)` and similar to build dynamic interfaces
+    - Avoid sending untrsted data into HTML rendering methods
+    - Avoid the numberous methods which implicity eval() data passed ot it
+        - setTimeout, setOInterval, execScript can accept a string of JS code to be interpreted, set first arg to a function instead
+    - Don't eval() JSON to convert it to native JS objects
+        - JSON.parse() doesn't use eval()
+- 8. Insecure Deserialization
+    - Deserialization (in Java): serialization is process of converting an object into a sequence of bytes which can be persisted to a disk or database or can be sent through streams. The reverse process of creating object from sequence of bytes is deserialization!
+    - Often leads to remote code execution
+    - Behavior modification: object and data structure related attacked where the attacker modifies application logic or achieves arbitrary remote code execution if there are classes available to the application that can change behavior during or after deserializations
+    - Content tampering: typical data tampering attacks, such as access-control-related attacks, where existing data structres are used but content in changes
+- 9. Using components with known vulnerabilities
+    - "Components, such as libraries, frameworks, and other software modules, run with the same privileges as the application. If a vulnerable component is exploited, such an attack can facilitate serious data loss or server takeover. Applications and APIs using components with known vulnerabilities may undermine application defenses and enable various attacks and impacts.”
+    - Prevention:
+        - remove unused dependencies, unnecessary features, components, files, and documentation
+        - continuously inventory versions of both client-side and server-side components (e.g. frameworks, libraries) 
+        - Only obtain compoennets from official sources over secure links. Use signed packaed to reduce change of including a modified, malicious componenet
+        - Monitor for libraries and components that are unmaintained or do not create security patches for older versions. If patching is not possible, consider deploying a virtual patch to monitor detect or protect against the discovered issue
+- 10. Insufficient Logging & Monitoring
+    - Most successful attacks start with vulnerability probing. Allowing such probes to continue can raise the likelihood or succesful exploit to nearly 100%
+    - Prevention:
+        - Ensure all login, access control failtures, and server-side input validation failures can be logged with sufficient user context and held for sufficient time to allow delayed forensic analysis
+        - Ensure that logs are generated in a format that can be easily consumed by centralized log management solutions
+        - Ensure high-value transactions have an audit trail with integrity controls to prevent tampering or deletion, such as append-only database tables or similar
