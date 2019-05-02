@@ -18,6 +18,18 @@ import { Router, Route, IndexRoute, browserHistory } from 'react-router';
 import { Provider } from 'react-redux'; // bindings that allows us to use redux with react
 import store, { history } from './store';
 
+// Add sentry, a client side error tracking
+import Raven from 'raven-js';
+import { sentry_url } from './data/config';
+
+Raven.config(sentry_url, {
+    tags: {
+        git_commit: "blah blah",
+        userLevel: "editor"
+    }
+}).install();
+
+
 const router = (
     // Provider exposes our store to our application
     <Provider store={store}>
