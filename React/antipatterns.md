@@ -46,4 +46,3 @@ An alternative to do the ID that is being used in the server entry?
 ## Spreading props on DOM elements
 Spreading props, we run into the risk of adding unknow HTML attribs. 
 We can specify the props we want to to pass in a var or we can also use destructing with `...rest`
-
