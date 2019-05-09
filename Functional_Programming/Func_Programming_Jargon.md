@@ -1,4 +1,5 @@
 # Functional Programming Jardon + EXAMPLES
+[source](https://github.com/hemanth/functional-programming-jargon#arity)
 ## Arity
 The number of arguments a function accepts. From words like unary, binary, ternary, arity is composed of the two suffixes "-ary" and "-ity".
 If a function takes take arguments, it is a binary function or a function with an arity of two
@@ -132,3 +133,74 @@ A function is idempotent if reapplying it to its result does not produce a diffe
 `Math.abs(Math.abs(10))`
 
 ## Point-free style
+Writing functions where definition does not explicitly identify arguments used. Usually requires currying or other Higher-Order funcs aka tacit programming
+```javascript
+const map = (fn) => (list) => list.map(fn)
+const add = (a) => (b) => a + b
+
+const incrementAll2 = map(add(1))
+```
+
+## Predicate
+A function that returns true or false for a given value, common use is as the callback for an array filter
+```javascript
+const predicate = (a) => a > 2
+
+;[1, 2, 3, 4].filter(predicate) // [3, 4]
+```
+## Contracts
+Specifies the obligations and guarantees of the behavior from a func or expression at runtime. Set of rules that are expected from input and output, errors usually reported when contract violated
+
+## Functor, ##Lift, ##Category Theory
+Super complex, need to come back to look into more detail
+[one explanation of functors](https://stackoverflow.com/questions/2030863/in-functional-programming-what-is-a-functor)
+
+## Lazy Evaluation
+Call-by-need evaluation mechanism that delays the evaluation of an expression until its value is needed. In functional langs, this allows for structures like infinite lists which would not normally be available in an imperative language where the sequencing of commands is significant
+Note: `function*` defines a generator function, which returns a Generator object
+```javascript
+const rand = function*() {
+  while (1 < 2) {
+    yield Math.random()
+  }
+}
+```
+
+## Monoid
+An object with a function that "combines" that object with another of the same type
+A simple monoid is the addition of numbers: `1 + 1 // 2` (numbers are the objs and `+` is the func)
+An identity value must also exist that when combined with a value doesn't change it. The indetity value for addition is `0`
+Array concatenation also forms a monoid, the identity value is an empty array
+If identity and compose functions are provided, functions themselves form a monoid
+```javascript
+const identity = (a) => a
+const compose = (f, g) => (x) => f(g(x))
+```
+
+## Monad
+
+## Comonad
+
+## Applicative Functor
+
+## Morphism
+A transformation func.
+### Endomorphism
+A function where the input type is the same as the output (str => str // int => int)
+### Isomorphism
+A pair of transformations between two types of objects that is structural in nature and no data is lost.
+EX: 2D coordinates could be stored in an array `[2, 3]` or object `{x: 2, y: 3}`
+### Homomorphism
+
+### Catamorphism
+
+### Anamorphism
+
+### Hylomorphism
+
+### Paramorphism
+
+### Apomorphism
+
+
+
