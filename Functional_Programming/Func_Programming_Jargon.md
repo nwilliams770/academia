@@ -151,7 +151,7 @@ const predicate = (a) => a > 2
 ## Contracts
 Specifies the obligations and guarantees of the behavior from a func or expression at runtime. Set of rules that are expected from input and output, errors usually reported when contract violated
 
-## Functor, ##Lift, ##Category Theory
+## Functor, ## Lift, ## Category Theory, ## Applicative Functor
 Super complex, need to come back to look into more detail
 [one explanation of functors](https://stackoverflow.com/questions/2030863/in-functional-programming-what-is-a-functor)
 
@@ -178,18 +178,21 @@ const compose = (f, g) => (x) => f(g(x))
 ```
 
 ## Monad
+Monad is vacuous for non-mathematicians, **computation builder** is more descriptive of what they are useful for.
+[source](https://stackoverflow.com/questions/8428554/what-is-the-comonad-typeclass-in-haskell)
 
 ## Comonad
 
-## Applicative Functor
-
 ## Morphism
 A transformation func.
+
 ### Endomorphism
 A function where the input type is the same as the output (str => str // int => int)
+
 ### Isomorphism
 A pair of transformations between two types of objects that is structural in nature and no data is lost.
 EX: 2D coordinates could be stored in an array `[2, 3]` or object `{x: 2, y: 3}`
+
 ### Homomorphism
 
 ### Catamorphism
