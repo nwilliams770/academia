@@ -130,4 +130,85 @@ Let's see a basic AF example:
 Look at all that functionality on just a single `/tickets` endpoint!
 NOTE: You may want to be all grammatical and try to changes `/tickets/12` to `ticket/12`..WRONG. Keep it simple and plural
 
-How do you deal with relations? 
+How do you deal with relations? If a relation can only exist within another resource, RESTful principles provide useful guidance. Let's elaborate on our basic example, each ticket consists of a number of messages so it can be mapped to the `/tickets` endpoint:
+- GET /tickets/12/messages - Retrieves list of messages for ticket #12
+- GET /tickets/12/messages/5 - Retrieves message #5 for ticket #12
+- POST /tickets/12/messages - Creates a new message in ticket #12
+- PUT /tickets/12/messages/5 - Updates message #5 for ticket #12
+- PATCH /tickets/12/messages/5 - Partially updates message #5 for ticket #12
+- DELETE /tickets/12/messages/5 - Deletes message #5 for ticket #12
+
+If a relation can exist independently of the resource, it makes sense to just include an indentifier for it within the output representation of the resource. API consumer would have to hit relation's endpoint but if relation is commonly requested alongside resource, API could offer different functionality to automatically embed relation's representation and avoid second hit to API
+
+What about actions that don't fit into the world of CRUD operations? 
+Fuzzy territory, some approaches:
+1. Restructure the action to appear like a field of a resource. This works if action doesn't take parameters. For example, an `activate` action could be mapped to a boolean `activated` field and updated via a PATCH to the resource
+2. Treat it like a sub-resource with RESTful principles. Example, Github API lets you start a gist with `PUT /gists/:id/star` and unstar with `DELETE /gists/:id/star`
+3. Sometimes you really have no way to map action to a sensible RESTful structure. For example, a multi-resource search doesn't make sense to be applied to a specific resource's endpoint. In this case, `/search` 
+
+SSL Everywhere - All The Time
+SSL: Secured Sockets Layer
+- web protocol for enhancing web security, TLS is an improvement on SSL but SSL is generally used to refer to both SSL and TLS
+Allows web clients and servers to:
+- verify each other's indentity
+- encrypt messages
+- ensure integrity of messages sent between them
+Always using SSL simplifies authentication efforts -- guaranteed encrypted communications allows us to get away with simple access tokens instead of having to sign each API request
+Watch for non-SSL acccess to API URLs. Do not redirect to SSL counterpartrs but throw a hard error instead. Do not want poorly configured clients to sent requets to an uncrypted endpoint just to be silently redirected to the actual encrypted endpoint
+
+Documentation
+API only as good as it's documentation! Should be easy to find and publically avail, do not put them in some downloadable PDF or require sign in, they should be front and center
+Should show examples of complete request/response cycles. 
+Must include any deprecation schedules and details surrounding externally visible API updates. Updates delivered via a blog (ie a changelog) and/or a mailing list
+
+Versioning
+Versioning helps you iterate faster and prevents invalid requests from hitting updated endpoints. 
+Mixed opinions about whether API should be included in URL or header, one method, done by Stripe, has major version in the URL but the API has date based sub-versions which can be chosen using a custom HTTP header.
+
+Result filtering, sorting, and searching
+Best to keep base resource URLs as lean as possible. Complex result filters, sorting and advanced searching can all be implemented as query params on top of the base URL
+- Filtering: use a unique query parameter for each field that implements filtering. EX: `/tickets` which have open state => `GET /tickets?state=open`. `state` is a query param that implements a filter
+- Sorting: similar to filtering, a generic parameter `sort` can be used to describe sorting rules, where complex sorting requirements can be described by comma separated fields, each with a possible unary negative to imply descending sort order. EX: `GET /tickets?sort=-priority` => retrieves tickets in descending order of priority | `GET /tickets?sort=-priority,created_at`=> retrieves list of tickets in desc order of priority. within specific priority, older tickets ordered first
+- Searching: when full text search is used as a mechanism of retrieving resource instances for a specific type of resource, can be exposed on the API as a query param on resource's endpoint. Let's say `q` EX: `GET /tickets?q=return&state=open&sort=-priority,created_at`=> retrieve the highest priority open tickets mentioning the word 'return'
+
+Aliases for common queries
+To make API experience more pleasant, consider packaging up sets of conditions into easily accessible RESTful paths. EX: recently closed tickets query => packaged up as `GET /tickets/recently_closed`
+
+Limiting Which Fields Are Returned By The API
+API consumer doesn't always need the full representation of a resource--the ability to select and choose return fields goes a long way in letting the API consumer minimize network traffic and speed up their own usage of the API
+Use a `fields` query param that takes comma separated list of fields to include. EX: `GET /tickets?fields=id,subject,customer_name,updated_at&state=open&sort=-updated_at`
+
+Updates & Creation Should Return A Resource Repsentation
+A PUT, POST, or PATCH call may make modifications to fields of the underlying resource that weren't part of the provided params (EX: created_at or updated_at timestamps). To prevent API consumer from having to hit the API again for updated representation, have the API return updated (or created) representation as part of the response. 
+In case of POST, use HTTP 201 and include Location header that points to URL of new resource
+
+Should You HATEOAS?
+Tf is HATEOAS (Hypermedia as the engine of application state)? Roughly, states that interaction with an endpoint should be defined within metadata that comes with the output representation and not based on out-of-band information
+Come back to HATEOAS in detail but the TL;DR is that it's not recommended for API design at this point!s
+
+JSON Only Responses
+Why not XML? Verbose, hard to parse, hard to read, data model isn't compatible with how most programming languages model data and its extendibility advantages are irrelevant when your output representation's primary needs are serialization
+
+If your customer base consists of a large number of enterprise customers, you may have to support XML anyway, now you've got this question:
+- Should the media type change based on Accept headers or based on URL?
+    - To ensure browser explorability, should be in URL. Most sensible option is to append `.json` or `.xml` extension to the endpoint URL
+
+snake_case vs camelCase for field names
+If using JSON as primary representation format, right thing is to follow JS naming conventions. Snake case is 20% easier to read however so think about that
+
+Pretty print by default & ensure gzip is supported
+Make it easier to debug and more plesant to use, have prettyprint as the default.
+If gzip compression is supported, the extra data added from prettyprint is quite small (8.5% without gzip, 2.6% with) so having it default is totes fine
+
+Dont use an evelope by default, but make it possible when needed\
+Many APIs wrap their responses in evelopes like this:
+```json
+{
+  "data" : {
+    "id" : 123,
+    "name" : "John"
+  }
+}
+```
+
+
