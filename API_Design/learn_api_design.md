@@ -210,5 +210,144 @@ Many APIs wrap their responses in evelopes like this:
   }
 }
 ```
+Why? Easy to include additional metadata, pagination information, some REST clients don't allow access to HTTP headers.
+Why no more? Becoming unnecessary with standards like CORS and Link header from RFC 5988
+CORS (cross-origin resource sharing): Allows you to use resources from other sites in your site.
+- Problem: Same origin constraint on browsers, can only make AJAX requests to the same origin as the page that was making the call. This is so websites aren't sending your data off to other websites, super sketchy! BUT, if we want resources from another site, such an images, some JS, what have you, we have to do a lot of work to "fake" like those resources are coming from us using proxy servers
 
+How should an envelope be used in exceptional cases
+2 situations where envelope really needed: if API needs to support cross domain requests over JSONP or if the client is incapable of working with HTTP headers. 
 
+Autoloading related resource representations
+Many cases where related or referenced data from resource being requested needs to be loaded as well. Rather than requiring consumer to hit API, we can add `embed` param to allow related data to be returned alongside original resource
+`GET /tickets/12?embed=customer.name,assigned_user`
+Ability to implement depends on internal complexity. Potential [N + 1 select issue](http://stackoverflow.com/questions/97197/what-is-the-n1-selects-issue)
+
+Rate limiting
+Standard to add rate limiting to an API, hence intro of HTTP 429 Too Many Requests status.
+Can be useful to notify consumer of limits before they hit it, popular method is using HTTP response headers:
+- `X-Rate-Limit-Limit` - number of requests in current period
+- `X-Rate-Limit-Remaining` - number of remaining requets in current period
+- `X-Rate-Limit-Reset` - number of secs left in current period?
+    - Why secs instead of timestamp? We don't need all that info like date, and possibly time zone, user only cares about time left till new period
+
+Authentication
+RESTful API is stateless so request authentication should not depend on cookies or session, each request should come with some sort of authentication credentials.
+Always using SSL, that can be simplified to a randomly generated access token that is devliered in the user name field of HTTP Basic Auth. 
+In  other cases, OAuth 2 can be used to provide token. If using JSONP, which cannot send HTTP Basic Auth credentials or Bearer tokens, special query param `access_token` can be used
+
+Caching
+HTTP provides built-in caching framework. Must include some additional outbound response headers and validation when you receive some inbound request headers. 2 approaches:
+- ETag (Entity Tags): when generating response, include HTTP header ETag with hash or checksum of resource representation. If inbound HTTP request contains `If-None-Match` header with matching ETag value, API should return `304 Not Modified` status instead of output representation of resource
+- Last-Modified: Works like an ETag, but uses timestamps. Response header `Last-Modified` contains timestap which is validated against `If-Modified-Since`
+
+Errors
+Representation of error should be no different than representation of resource, just with its own set of fields. API errors usually break down into 2 types: 400 series for client issues & 500 series for server issues. All 400 series errors should come with consumable JSON error representation. Validation errors for PUT PATCH and POST will need a field breakdown.
+
+Status codes
+A nice little reference of common and meaningful status codes
+200 OK - Response to a successful GET, PUT, PATCH or DELETE. Can also be used for a POST that doesn't result in a creation.
+201 Created - Response to a POST that results in a creation. Should be combined with a Location header pointing to the location of the new resource
+204 No Content - Response to a successful request that won't be returning a body (like a DELETE request)
+304 Not Modified - Used when HTTP caching headers are in play
+400 Bad Request - The request is malformed, such as if the body does not parse
+401 Unauthorized - When no or invalid authentication details are provided. Also useful to trigger an auth popup if the API is used from a browser
+403 Forbidden - When authentication succeeded but authenticated user doesn't have access to the resource
+404 Not Found - When a non-existent resource is requested
+405 Method Not Allowed - When an HTTP method is being requested that isn't allowed for the authenticated user
+410 Gone - Indicates that the resource at this end point is no longer available. Useful as a blanket response for old API versions
+415 Unsupported Media Type - If incorrect content type was provided as part of the request
+422 Unprocessable Entity - Used for validation errors
+429 Too Many Requests - When a request is rejected due to rate limiting
+
+#### PUT vs POST [source](https://stackoverflow.com/questions/28459418/rest-api-put-vs-patch-with-real-life-examples) & PUT vs PATCH [source](https://stackoverflow.com/questions/630453/put-vs-post-in-rest)
+PUT v POST:
+- `POST` requests origin server to accept entity enclosed in request as a new subordinate resource indentified by `Request-URI` in the `Request-Line` e.g. used to **create**
+- `PUT` requests enclosed entity be stored under supplied `Request-URI`. If that refers to an already existing resource, enclosed entity should be considered as a modified version of one residing on origin server. If `Request-URI` does not point to existing resource, and that URI is capable of being defined as new resource by requesting user agent, origin server can create resource with that URI. e.g. **create or update**
+
+Which to use when and why?
+- Both can be used, you don't need to support both, but keep in mind what object you're referencing in the request
+- Consider:
+    - Do you name your URL objects you create explicitly or let server decide? If you name them, use PUT, if you let server decide use POST
+    - PUT is **idempotent** (making multiple identical request has same effect as making a single request), which is nice to have!
+    - You can also update or create a resource with PUT with same object URL
+    - You can have 2 POST requests coming in at same time making modifications to a URL, and they may update diff parts of object
+Let's see an example:
+Modifying or update a resource
+```
+POST /questions/<existing_question> HTTP/1.1
+Host: www.example.com/
+```
+CANNOT do this with POST, URL is not yet created so we'll get a 'resource not found' error
+```
+POST /questions/<new_question> HTTP/1.1
+Host: www.example.com/
+```
+But instead must do this if you want to use POST:
+```
+POST /questions HTTP/1.1
+Host: www.example.com/
+```
+Creating new resource: 
+```
+PUT /questions/<new_question> HTTP/1.1
+Host: www.example.com/
+```
+
+PUT vs PATCH:
+- `PATCH` requests that a set of changes described in the request entity be applied to resource identified by the `Request-URI`
+Why and when to use?
+- First must understand that PUT requires the **entire** entity which **replaces** the any existing entity at that URI while PATCH only updates the fields that were supplied. 
+- Since PUT requests include the entire entity, if you issue the same request repeatedly, it should always have some outcome and is therefore idempotent
+```
+PUT /users/1
+{
+    "username": "skwee357",
+    "email": "skwee357@gmail.com"       // new email address
+}
+
+PATCH /users/1
+{
+    "email": "skwee357@gmail.com"       // new email address
+}
+```
+- If we were to send a PUT request without each field, there is a potential for **data loss** as we'll lose whatever fields aren't specified in the request
+Based on these examples, it looks like PATCH may be idempotent as well--every time we send a PATCH request we'll get the same response, so how is it not? 
+Well let's define idempotence:
+- The term idempotent is used more comprehensively to describe an operation that will produce the same results if executed once or multiple times [...] An idempotent function is one that has the property f(f(x)) = f(x) for any value x.
+Consider this example:
+We have a `/users resource` and calling `GET /users` returns a list of users. Rather than PATCHing `/users/{id}` suppose we PATCH via `/users`:
+```
+PATCH /users
+[{ "op": "add", "username": "newuser", "email": "newuser@example.org" }]
+```
+Let's also say that the `/users` resource allows duplicate usernames. If we issue the exact same PATCH request, the subsequent `GET /users` returns
+```
+[{ "id": 1, "username": "firstuser", "email": "firstuser@example.org" },
+ { "id": 2, "username": "newuser", "email": "newuser@example.org" },
+ { "id": 3, "username": "newuser", "email": "newuser@example.org" }]
+ ```
+Despite having issued the EXACT SAME PATCH request against the same endpoint, the `/users` resource has changed!
+Note that a PATCH request can be implemented in such a way as to be idempotent
+
+Some good API examples and useful resources
+- Github, Twitter, Stripe, Google, Parse REST API
+- [Public APIs](https://github.com/toddmotto/public-apis)
+- [RESTful web API Doc Generator](http://apidocjs.com/)
+
+### Streaming
+Websockets:
+First a little intro:
+- protocol that allows real-time interactive communication between client browser and a server. Completely different protocol than HTTP that uses bidirectional dataflow
+- With HTTP, a request is needed to response, we are constantly asking the server for new messages per se but web sockets don't need you to send a request in order to respond, we just have to listen for any data
+- What are they useful for?
+    - real-time applications
+    - chat apps
+    - IoT (internet of things)
+    - online multiplayer games
+- **NOT RECCOMMENDED** for a RESTful API as HTTP verbs are awesome at that already
+- Can we currently use them and get support? YES! IE 10+, Safari/iOS Safari 7.1+, Android 4.4+ & Android Chrome
+- WebSockets account for network hazards such as proxies and firewalls (and can traverse them), making streaming possible over any connection and with the ability to support upstream and downstream communications over a single connection => less burden on servers
+- Designed to work with existing Web infrastructure which is why WebSocket connection starts its life as an HTTP connection guaranteeing backwards compatibility.
+- The protocol switch from HTTP to WebSocket is referred to as the "WebSocket handshake" <- weird
+    - if server understands protocol HTTP connection breaks down and replaced by WebSocket over **the same underlying TCP/IP connection**, uses same ports as HTTP and HTTPS by default
