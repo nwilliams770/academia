@@ -351,3 +351,38 @@ First a little intro:
 - Designed to work with existing Web infrastructure which is why WebSocket connection starts its life as an HTTP connection guaranteeing backwards compatibility.
 - The protocol switch from HTTP to WebSocket is referred to as the "WebSocket handshake" <- weird
     - if server understands protocol HTTP connection breaks down and replaced by WebSocket over **the same underlying TCP/IP connection**, uses same ports as HTTP and HTTPS by default
+
+Intro to the HTML5 WebSockets API [source](https://www.sitepoint.com/introduction-to-the-html5-websockets-api/)
+
+Problem: In real-time apps, the client-server connection must be persistent and in order to create that illusion, long polling usually used which can really burden the server!
+Solution: WebSockets! Establish persistent socket connection between client and server that remains open until client or server wants to close it
+
+An Implementation Example:
+Call the `WebSocket()` constructor to create a connection
+```javascript
+var connection=new WebSocket("ws://localhost:8787",['soap','json']);
+```
+`ws:` and `wss:` are URL schemas for normal and secured WebSocket connections, respectively. Second param here is used to define sub protocol name, a string or array of strings
+During connections lifetime, browser will receive several events such as connection opened, message received, and connection closed. We need to handle these events:
+```javascript
+var connection=new WebSocket("ws://localhost:8787",'json');
+connection.onopen = function () {
+  connection.send('Hello, Server!!'); //send a message to server once connection is opened.
+};
+connection.onerror = function (error) {
+  console.log('Error Logged: ' + error); //log errors
+};
+connection.onmessage = function (e) {
+  console.log('Received From Server: ' + e.data); //log the received message
+};
+```
+Note: `connection.send()` can be used to send binary as well, either a `Blob` or an `ArrayBuffer`
+```javascript
+// Send image drawn on canvas to server
+var image = canvas2DContext.getImageData(0, 0, 440, 300);
+var binary_data = new Uint8Array(image.data.length);
+for (var i = 0; i < image.data.length; i++) {
+  binary_data[i] = image.data[i];
+}
+connection.send(binary_data.buffer);
+```
