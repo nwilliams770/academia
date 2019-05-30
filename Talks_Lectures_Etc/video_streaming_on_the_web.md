@@ -84,8 +84,11 @@ MSE spec does not dictate the media format but common types are mp4 and webm fil
 
 #### Media Segments
 Fetch media in chunks for more flexibility 
-cool fetcher functional programming snippet:
+cool fetcher functional programming snippet, also super cool syntax for describing methods!
 ```javascipt
+ * @param {string} url
+ * @returns {Promise.<ArrayBuffer>}
+
 function fetchSegment(url) {
   return fetch(url).then(function(response) {
     return response.arrayBuffer();
@@ -106,4 +109,41 @@ Pretty much same as adaptive streaming, fetch different audio based on client in
 Keep in mind why having video and audio separate server-side is more advantageous--think if we kept them together in one file, say we change languages and then have to download video with it, eeek
 
 #### Live contents
+Also greatly simplified by fact that audio and video are segmented. Segments are added to the server in increments, let's say 2 second segments. 
 
+How can we know what JS segments are avail at a certain point in time on the server? As a client, we want latest segments as soon as avail while avoiding requesting too soon and getting a 404 error because they don't yet exist.
+
+Usually solved with a transport protocol (aka Streaming Media Protocol)
+
+#### Transport Protocols
+In general, most have a core concept: the **Manifest**
+
+With it, you can describe all info on the media:
+- which audio langauges avail in and where they are on the server, as in "at which URL"
+- different audio and vid qualities
+- what segments avail, in the context of live streaming
+
+Most common transport protocols used in web context are:
+- DASH
+    - used by YOutube, Netflix, PRime Video. DASH' manifest called Media Presenteation Description (MDP) and is XML. Flexible and allows MDP to support most use cases and to be codec-agnostic
+- HLS
+    - developed by Apple, used by DailyMotion, Twitch.tv. HLS manifest is called the playlist and is in m3u8 format (m3u playlist files encoded in UTF-8)
+- smooth streaming
+    - dev'd by Microsoft, manifests are called manifests and are XML-based
+
+#### In the wild
+Behavior becomes quickly pretty complex, lots of features to support:
+- download and parse some sort of manifest file
+- guess network conditions
+- register user preferences
+- know which segment to download based on at least the two previous points
+- manage segment pipeline to download sequentially the right segments at right down
+- deal with subtitles
+- some manage thumbnails track, which you can see when hovering over progress bar
+- DRM management
+
+All this is why there's a lot of libraries that do all this for you:
+- rx-player
+- dash.js
+- hls.js
+- shaka-player
