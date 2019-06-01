@@ -386,3 +386,5 @@ for (var i = 0; i < image.data.length; i++) {
 }
 connection.send(binary_data.buffer);
 ```
+
+### Versioning an API
