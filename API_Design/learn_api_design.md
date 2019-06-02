@@ -388,3 +388,58 @@ connection.send(binary_data.buffer);
 ```
 
 ### Versioning an API
+#### You're versioning wrong [source](https://www.troyhunt.com/your-api-versioning-is-wrong-which-is/)
+Three common schools of thought for versioning your API:
+1. URL: place API version into URL, `/api/v2/breachedaccount/foo`
+2. Custom request header: Same url but add a header that details version
+3. Accept heady: modify accept header to specify version
+
+And here's why they apparently suck
+1. URLs such because they should represent the entity: We're wanting to fetch some data, not a version of some data, semantically it's not correct yet it's easy to use!
+2. Custom request headers such because it's not really a semantic way of describing the resource: HTTP spec gives us a means of requesting the nature we'd like the resource represented in with the accept header
+3. Accept headers such because they're harder to test: You can have to carefully construct the request and configure the accept header appropriately
+
+Most important thing is to provide **stability**, so you can provide consumers of your API with a choice between either of those wrong ways! IF a version isn't specified, we default to V1
+
+Our author prefers specifying via the accept header, because:
+1. URl should not change, URL represents the resource so unless we're trying to represent different version of the resource then URL should not change
+2. Accept headers describe how you'd like the data. Semantic of the HTTP spec and just as semantics of HTTP verbs make sense, so too does way client would like content represented
+
+From accompanying stackoverflow article:
+"I would conclude that API versions should not be kept in resource URIs for a long time meaning that resource URIs that API users can depend on should be permalinks.
+
+Sure, it is possible to embed API version in base URI but only for reasonable and restricted uses like debugging a API client that works with the the new API version. Such versioned APIs should be time-limited and available to limited groups of API users (like during closed betas) only. Otherwise, you commit yourself where you shouldn't."
+
+Consider having the services be bound to a base URI. When you have URI clearly visible, API history becomes visible/apparent in the URI design and is prone to changes over time, which goes against REST guidelines. 
+
+A way to work around this is implement latest API version under versionless base URI and make versioned URI aliases:
+```
+http://shonzilla/api/customers/1234
+http://shonzilla/api/v3.0/customers/1234
+http://shonzilla/api/v3/customers/1234
+```
+
+Also, clients pointing to OLD API version URIs will be informed they are using an obsolete or not supported version anymore. 
+Return any of the 30x HTTP status codes that indicate redirection that are using in conjunction with `Location1 HTTP header that redirects to approriate version:
+"301 Moved permanently indicating that the resource with a requested URI is moved permanently to another URI (which should be a resource instance permalink that does not contain API version info). This status code can be used to indicate an obsolete/unsupported API version, informing API client that a versioned resource URI been replaced by a resource permalink.
+
+302 Found indicating that the requested resource temporarily is located at another location, while requested URI may still supported. This status code may be useful when the version-less URIs are temporarily unavailable and that a request should be repeated using the redirection address (e.g. pointing to the URI with APi version embedded) and we want to tell clients to keep using it (i.e. the permalinks)."
+
+#### API Evolution [source](https://www.mnot.net/blog/2012/12/04/api-evolution)
+Suggested Practices:
+
+Keep compatible changes out of names. Names should be stable over time and identify with known set of semantics, corresponding to major version number. "Names" as in anything that's an indetifier, URL, media type, link relation name, HTTP header, etc
+
+Avoid major new versions, people have to look at it, understand it, write new software to it, debug it, etc. Huge invsetment on both sides
+
+Make changes backwards-compatible. If you want to add support for a new HTTP method or add a new resource, this doesn't necessitate a new version. Adding support for a new format can be achieve through content negotiation. 
+
+Think about forwards-compatibility: Evolution is about figuring out how to limit breakge that your changes incurs on clients
+
+### Caching
+#### Caching API Requests [source](https://thoughtbot.com/blog/caching-api-requests)
+^ pretty nice snippets
+Some requests will frequently occure with same params and return same result, if we cache our request or response, we can reduce HTTP requests, can improve performance and avoid hitting rate lmits. 
+
+Don't always need to cache entire API response, we can save space, avoid adding operational overhead of Memcache or Redis and avoid repeating the JSON parsing step if we cache only the URL requested
+
