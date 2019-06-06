@@ -443,3 +443,89 @@ Some requests will frequently occure with same params and return same result, if
 
 Don't always need to cache entire API response, we can save space, avoid adding operational overhead of Memcache or Redis and avoid repeating the JSON parsing step if we cache only the URL requested
 
+---
+### Principles of 'good' RESTful API design [source](https://codeplanet.io/principles-good-restful-api-design/)
+Review terms:
+- Resource: single instance of an object
+- Endpoint: An API URL on a Server which represents either a Resource or an entire Collection
+- Idempotent: 'Side-effect' free, multiple calls without penalty
+
+API should abstract away as much of your data and business logic as possible, don't want to overwhelm Third-Party Developers with complex app data.
+
+Keep track of the version/endpoints of your API being used by Consumers. Can be as simple as incrementing each time you get a request. 
+Contact developers using the deprecated features when you deprecate a version of the API. Perfect way to remind them to upgrade
+
+Root URL is important. Consider putting the API on its own subdomain (.e.g example.org/api/v1/*) if you have a large app. Also important to have content at the root of your API
+
+**Minimize the arbitrary limits imposed on Third Party Developers**
+
+Provide options of how the data can be served/filtered/limited as opposed to defaulting with them. limit and offset for Pagination. Make sure to whitelist any filter or sorting params provided by consumers!
+
+Status codes:
+"The 1xx range is reserved for low-level HTTP stuff, and you’ll very likely go your entire career without manually sending one of these status codes.
+
+The 2xx range is reserved for successful messages where all goes as planned. Do your best to ensure your Server sends as many of these to the Consumer as possible.
+
+The 3xx range is reserved for traffic redirection. Most APIs do not use these requests much (not nearly as often as the SEO folks use them ;), however, the newer Hypermedia style APIs will make more use of these.
+
+The 4xx range is reserved for responding to errors made by the Consumer, e.g. they’re providing bad data or asking for things which don’t exist. These requests should be be idempotent, and not change the state of the server.
+
+The 5xx range is reserved as a response when the Server makes a mistake. Often times, these errors are thrown by low-level functions even outside of the developers hands, to ensure a Consumer gets some sort of response. The Consumer can’t possibly know the state of the server when a 5xx response is received, and so these should be avoidable."
+
+Provide documentation for expects returns when performing actions using the various HTTP verbs to Server endpoints
+
+Use the Accept header when responding with data in order to specify the data format
+
+Hypermedia APIs:
+When working with non-Hypermedia RESTful APIs, URL Endpoints part of the contract between Server and Consumer; the Endpoints must be known by Consumer ahead of time and changing them means the Consumer can no longer communicate with the Server. This is a big limitation!
+
+With humans however, we can navigate the web, making HTTP requests all over, because we can parse content, click links, essentially "go where we wanna go". if a url changes, we are pretty much unaffected
+
+Hypermedia API concept works in a similar way. Requesting the Root of the API returns a listing of URLs which perhpas each point to a collection of info, describing each in a way that the Consumer can understand. 
+This way, URLs don't need to be known as part of a contract, if a URL is cached and we get a 404, we can go back to the Root and find the collection all over again. JSON doesn't give us the semantics we need for specifying which attribs are URLs, nor how URLs relate to the current document. 
+HTML does though!
+
+Errata: Raw HTTP Packet
+Requests provide a set of a Key/Value pairs, valled a Header, along with two newline characters and the request body. This is all sent in the same packet
+
+Server responds in the same key/value pair format, two newlines then response body. Wireshark is a good tool for looking at raw HTTP packets
+
+----
+#### Callbacks, synchronous and asynchronous (source)[https://blog.ometer.com/2011/07/24/callbacks-synchronous-and-asynchronous/]
+
+Definitions:
+- A ***synchronous** callback is invoked before a function returns e.g. while the API receiving the callback remains on the stack. `list.foreach(callback) // callback invoked on each el before foreach() returns`
+- An **asynchronous**  or **deferred** callback is invoked after a function returns, or at least on another thread's stack. `socket.connect(callback) // when connect() returns, callback has not been called since it's waiting for connection to complete`
+
+Guidelines:
+- A given callback should be either always sync or always async, as a documented part of API contract
+- An async callback should be invoked by a main loop (e.g. primary logic like in C) or central dispatch mechanism directly i.e. no unnecessary frames on the callback-invoking thread's stack, esp if those frames might hold locks
+
+Sync vs Async:
+Each raise difference issues for both app developer and library implementation
+Sync callbacks:
+- Invoked in original thread so do not create thread-safety concerns by themselves
+- May access data stored on the stack such as local vars in languages like C/C++
+- May access data tied to the current thread, such as thread-local vars for perhaps the current request
+- May be able to assume certain app state is unchanged, for example assume that objects exist, timers not fired, IO has not occured, or whatever pertinent state involves
+
+Async callbacks:
+- May be invoked on another thread so apps must synchronize any resources the callback accesses
+- Cannot touch anything tied to original stack or thread, such as local vars or thread-local data.
+- If original thread held locks, callback invoked outside them
+- Must assume other threads or events could have modified application's state
+
+Both have different uses
+`list.foreach(callback)`
+in most cases you'd be surprised if that callback were deferred and did nothing on the current thread!
+
+but
+`socket.connect(callback)`
+this would be totally pointless if it never deferred the callback, why have a callback at all
+
+Both cases show why a given callback should be defined as either sync or async, they're not interchangeable and don't have the same purpose
+
+Choose sync or async but not both:
+Its tempting to invokved the callback synchronously when possible, like if data is already available, and otherwise defer it, not a good idea!
+Because sync and async callback have different rules they create different bugs, planning for and testing for both sync and async cases is hard so best rule of thumb:
+**If callback must be deferred in any situation, always defer it**
