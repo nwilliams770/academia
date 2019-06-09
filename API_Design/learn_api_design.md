@@ -529,3 +529,12 @@ Choose sync or async but not both:
 Its tempting to invokved the callback synchronously when possible, like if data is already available, and otherwise defer it, not a good idea!
 Because sync and async callback have different rules they create different bugs, planning for and testing for both sync and async cases is hard so best rule of thumb:
 **If callback must be deferred in any situation, always defer it**
+
+Synchronized resources should defer all callbacks they invoke:
+A library should drop all locks before invoking an application callback and the simplest way to drop all locks is to make the callback async, deferring it until the stack unwinds back to the main loop or another thread's stack.
+
+Why?
+Avoid deadlocking. If you hold locks and the (client's) app touches your API while you do, the app will deadlock.
+
+Callback-based APIs really work best if you have an event loop, because it's so important to be able to defer callback invocation. 
+
