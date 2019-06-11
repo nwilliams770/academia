@@ -64,6 +64,14 @@ Exploring Types:
 * short declaration operator, `:=`, allows us to declare and assign a value, ex: `x :=42`
     * when to use `var x = 42`? when you want to scope to be package level (e.g. entire program level)
     * we can also declare a variable a specific type, and it will by default be assigned it's **zero value** ex: `var z int` <= zero value for `int` is `0`
+* Because Go is statically-typed, vars are declared to hold VALUEs or a certain TYPE
+
+Creating your own type:
+* we can declare our own type in Go quite easily, `type corndog int` where `int` is the underlying type
+* how can we make corndogs play with their underlying types (or other types for that matter): conversion:
+    - `var x hotdog = 7` => `int(x)`
+
+
 
 
 
