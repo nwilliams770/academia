@@ -46,8 +46,26 @@ Workspace (how computer and code is organized) in Go is quite opinionated for ef
 * GOPATH points to your go workspace
 * GOROOT points to your binary installation of Go
 
-**IDEs**
-Integrated Development Environments
+---
+
+### Lesson 2: Variables, Values, & Types
+Introduction to packages:
+* variadic parameters
+    * `...<some type>` is how we signify a variadic param
+    * type `interface{}` is empty interface, every value is also of type `interface{}`
+    * thus, `...interface{}` can accept infinite number of arguments of any type
+* throwing away returns
+    * `_` is used to cast away returns e.g. not do anything with them
+* compiler will not allow unused vars
+* notation in Go for using packages is
+    * `package.Indentifier` ex: `fmt.Println()`
+
+Exploring Types:
+* short declaration operator, `:=`, allows us to declare and assign a value, ex: `x :=42`
+    * when to use `var x = 42`? when you want to scope to be package level (e.g. entire program level)
+    * we can also declare a variable a specific type, and it will by default be assigned it's **zero value** ex: `var z int` <= zero value for `int` is `0`
+
+
 
 
     
