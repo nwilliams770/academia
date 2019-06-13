@@ -71,6 +71,11 @@ Creating your own type:
 * how can we make corndogs play with their underlying types (or other types for that matter): conversion:
     - `var x hotdog = 7` => `int(x)`
 
+### Lesson 3: Fundamentals
+A brief review of what's going on under the hood of our software:
+* On & Off, 1 & 0, Binary Digits, Bits, and Machine Language are all words used to refer to this idea that, within a computer, it's all nothing but a bunch of ZERO's and ONE's, or switches that are ON or OFF. It's all just a bunch of binary digits or bits, that's the language which computers speak, it's machine language
+* Circuits, switches, transistors and even "gates" are all words used to refer to this thing within a computer that can either be ON or OFF. People use all of those words to talk abotu this same thing: the ability of computers to store ON / OFF states.
+* An example of one of the most common coding schemes today is **ASCII** and **UTF-8**
 
 
 
