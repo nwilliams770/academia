@@ -150,4 +150,5 @@ Let's look at Maps now:
     * v is the value and the optional indentifier (normally called ok) lets us know if that key exists
     * A very common idiom (the comma-ok idiom) you may see is `if v, ok := m["James"]; ok { ...block }
 * To add a new item the map, we use same syntax we've used in previous languages, `m["new_key"] = value`
+* To remove an item from a map we can the built-in `delete` function: `delete(<map name>, "key")`
 * To iterate over a map, we can use `for..range`: `for k, v := range m { ...block }`
