@@ -113,10 +113,41 @@ Bit Shifting:
 
 ---
 
-### Lesson 4: Control Flow
+### Lesson 5: Grouping Data (Aggregate Data Types)
+* Let's look at some data types and structures that we can use to group various amounts of data, of the same type and in some cases, not of the same type
+* For arrays in Go, we must specify the size and type it will hold: `var x [5]int` => an `int` array of length 5
+    * Note that the length of an array is part of its type! so `var x [5]int` and `var y [6]int` are technically different types :p
+* However, in Go, arrays are actually discouraged from use *in the documentation* as treated more so as a building block for slices
 
+Let's introduce slices:
+* We're going to create a slice using a **composite literal**, a way we can compose a bunch of values together of the same type:
+* From the docs: composite literals construct values for structs, arrays, slices, and maps and create a new value each time they're evaluated
+```go
+x := type{values} // composite literal
+x := []int{4, 5, 6, 7, 8, 42}
+```
+And now let's look at some things we can do with slices
+* We can get the length of it from the built-in `len` method, `len(x)`
+* We can index into a slice like we would an array, `x[0]`
+* We can loop over it, `for i, v := range x { ...block }` where `i` is our index and `v` is current value
+* We can slice a slice, using the `:` operator: `x[1:3]` => [5, 7] (the second value is up to and not including) | we don't need to provide a terminating index either, it'll default to the rest of the slice: `x[1:]` => [5 7 8 42]
+* We can append to a slice. `x = append(x, 77, 88)` => [4, 5, 6, 7, 8, 42, 77, 88]
+* We can append a slice to another, `y := []int{45, 46}`, `x = append(x, y...) // note the ... is like a spread operator, unfurls all the values of y`
+    * To summarize, we cannot just append two slices, we must append values of the same type that the slice holds which is why we must unfurl the slice using `...`
+* We can delete from a slice, `x = append(x[:2], x[4:]...)` will remove the 3rd and 4th values from the slice
 
+* Most times you will use a composite literal to declare a slice but you can also do so using the built-in function `make([]T, length, capacity)`:
+    * A slice, unlike an array, is dynamic in size and therefore takes a little more processing power when it's size needs to increase to fit more values (a new array must be created and all values must be copied over into it)
+    * By using `make` and being very explicit about the length we want, we can be more performant during runtime and compilation
+    * We can use make like so: `x := make([], 10, 100)` => `[0,0,0,0,0,0,0,0,0,0]`, we can verify this by using `len(x) => 10` and `cap(x) => 100`
+    * What would happen if we added more values than our capacity? Our array will double in size (note: definitely look up the algorithmic reasoning behind that, it's definitely most cost-effective to double the size)
 
+* Note that for slices we can have multi-dimensional, or nested, slices. These can be declared using the following syntax: `xp := [][]string{*slice1*, *slice2*, ..etc}`
 
-    
-
+Let's look at Maps now:
+* A hash map, key-value pairs, unordered list, very fast lookup (duhhh): `map[key]value{"James": 32,"Miss Moneypenny: 27,}`, `map[string]int{}` (note `map[string]int` *is* our type)
+* Note that in Golang, if you key into a map with a key that does not exist, you will get a zero value, this can be quite problematic as we don't know if the key exists of if it's corresponding value is 0, so there's a way to check: `v, ok := m["key that doesn't exist"]`
+    * v is the value and the optional indentifier (normally called ok) lets us know if that key exists
+    * A very common idiom (the comma-ok idiom) you may see is `if v, ok := m["James"]; ok { ...block }
+* To add a new item the map, we use same syntax we've used in previous languages, `m["new_key"] = value`
+* To iterate over a map, we can use `for..range`: `for k, v := range m { ...block }`
