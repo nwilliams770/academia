@@ -152,3 +152,93 @@ Let's look at Maps now:
 * To add a new item the map, we use same syntax we've used in previous languages, `m["new_key"] = value`
 * To remove an item from a map we can the built-in `delete` function: `delete(<map name>, "key")`
 * To iterate over a map, we can use `for..range`: `for k, v := range m { ...block }`
+
+---
+
+### Lesson 6: Structs
+* A struct is a data structure which allows us to compose together values of different type, it's an *aggregate* data structure or also known as a composite data struture
+* When structs are nested, noteworthy to mention that the inner type is 'promoted' to the outer type, which is to say, fields of the inner type become available via the outer type, this can be shown through accessing those promoted fields with dot notation
+* Note that structs may look a lot like objects but we use a different vocabulary to describe them, for example, we have an *instance* of an object but in Golang we call it a *value* of that type
+* Let's look at anonymous struct:
+    * There may be moments when we want to define a struct on the fly for quick use, we can use an anonymous struct for that as opposed to polluting our code with a named struct we'd only use once
+```golang
+// named
+type person struct {
+    first string
+    last string
+    age int
+}
+// anonymous
+p1 := struct {
+    first string
+    last string
+    age int
+}
+```
+* Is Golang OOP? Go has OOP aspects but it's all about TYPE. We create TYPES in Go, user-defined TYPES. We can then have VALUES of that type. We can assign VALUES of a user-defined TYPE to VARIABLES. Some of those aspects are:
+    * Encapsulation
+        * state ("fields")
+        * behavior ("methods")
+        * exported and unexported; viewable and not viewable
+    * Reusability
+        * inheritance ("embedded types")
+    * Polymorphism
+        * interfaces
+    * Overriding
+        * "promotion"
+* In Go:
+    * you don't create classes, you create a TYPE
+    * you don't instantiate, you create a VALUE of a TYPE
+
+---
+
+### Lesson 7: Functions
+* All about being modular--we want to avoid spaghetti code, we can be modular in Go by using functions and packages
+* function structure is..`func (r receiver) indentifier(parameters) (return(s)) {...}`
+    * we define our function with parameters (if any) and we call our function and pass in arguments
+```golang
+// multiple returns have to be in (), otherwise they don't have to be
+func mouse(fn string, ln string) (string, bool) {
+    a := fmt.Sprint(fn, " ", ln, `, says "Hello!"`)
+    b := false
+    return a, b
+}
+```
+* We can have variadic parameters in our functions, such as `func foo(x ...int)` but what type will `x` be if we call `foo(2, 3, 4, 5)`? A slice of `int`s
+    * Keep this in mind when you work with variadic parameters so you know how to properly handle them in your functions!
+    * Variadic parameters must be the LAST parameters in your function as well
+    * Note that, even with variadic params, we must respect types, for example:
+```golang
+xi := int[]{1, 2, 3, 4}
+x := foo(xi) // THIS WILL ERROR, foo accepts any number of ints NOT a slice of ints
+x := foo(xi...) // With '...' we can 'unfurl' the slice and feed our function its contents e.g. ints!
+x := foo() // This ALSO works! variadic params can accept NOTHING and be just fine
+```
+* Let's look at the `defer` keyword:
+    * It, as you can guess, defers the execution of a function
+    * Deferred functions will be called after their wrapper functions have returned
+    * When to use? We can use it when opening a file. After we open the file, inside that function we can call a deferred function to close it so we never leave files open
+
+* How about methods? Structs with functions
+```golang
+// ALL values of secretAgent can now access the 
+func (s secretAgent) speak() {
+    fmt.Println("I am", s.first, s.last)
+}
+sa1 := secretAgent{
+    person: person{
+        "James",
+        "Bond",
+    },
+    ltk: true,
+}
+```
+* Interfaces allow us to define behavior and to do polymorphism:
+```golang
+// 
+type human interface {
+    // This means that, any other type that also has the method `speak()` is ALSO of type human
+    speak()
+}
+```
+* A value can be of more than one type!
