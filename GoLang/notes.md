@@ -238,7 +238,11 @@ sa1 := secretAgent{
 // 
 type human interface {
     // This means that, any other type that also has the method `speak()` is ALSO of type human
+
+    // "If you have these methods then you are also my type"
     speak()
 }
 ```
-* A value can be of more than one type!
+* A value can be of more than one type! By assigning any type that has the method `speak` to type `human` as well, we can do human-specific things such as `speakHuman (h human) { fmt.Println("human speaking!)}`
+    * As long as the argument contains the method `speak`, it can be used in `speakHuman`
+    * This means that VALUES of other types such as `secretAgent` or `person` can also be passed to `speakHuman` as they both have `speak` methods
