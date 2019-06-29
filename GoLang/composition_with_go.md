@@ -57,4 +57,5 @@ Embedded Types:
 * Struct types have the abiltiy to contain anonymous or embedded fields, this is also called embedding a type. When we embed a type into a struct, the name of the type acts as the field name for what is then an embedded field
 
 ## Composition with Go [source](https://www.ardanlabs.com/blog/2015/09/composition-with-go.html)
-* 
+This article wasn't necessarily good for note-taking as it is mainly a detailed example. That being said, it's a great detailed example!
+Reviews OOP structuring guidelines, leveraging the flexibility of interfaces, and general conseilles about code composition/structuring

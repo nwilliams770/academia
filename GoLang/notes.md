@@ -246,3 +246,119 @@ type human interface {
 * A value can be of more than one type! By assigning any type that has the method `speak` to type `human` as well, we can do human-specific things such as `speakHuman (h human) { fmt.Println("human speaking!)}`
     * As long as the argument contains the method `speak`, it can be used in `speakHuman`
     * This means that VALUES of other types such as `secretAgent` or `person` can also be passed to `speakHuman` as they both have `speak` methods
+
+* Go supports anonymous functions, syntax is quite similar to IIFEs in JavaScript:
+```golang
+func main() {
+    func () {
+        fmt.Println("The meaning of life is 42")
+    }()
+
+    // We can also have function expressions:
+    f := func(x int) {
+        fmt.Println("The meaning of life is:", x)
+    }
+
+    f(42)
+
+    // We can also return functions:
+    // Note we don't need to wrap parens around our return type because we are only return ONE thing
+    func bar() func() int {
+        return func () int {
+            return 451
+        }
+    }
+
+    // Note we can call the returned by function by stacking the call operator
+    bar()() // => 451
+
+    // Go also supports callbacks (passing a func as an argument), demonstrated in func even
+    func sum(xi ...int) int {
+        total := 0
+        for _, v := range xi {
+            total += v
+        }
+        return total
+    }
+
+// note our variadic param has to be last!
+    func even(f func(xi ...int) int, vi...int) int {
+        var yi []int
+        for _, v := range vi {
+            if v % 2 == 0 {
+                yi = append(yi, v)
+            }
+        }
+        return f(yi...)
+    }
+
+    // We can also encapsulate variables e.g limit their scope by using closures
+    {
+        // This here is a "closure", just not one we'd see in the wild but it is that simple to encapsulate a variable
+        y := 42
+        fmt.Println(y)
+    }
+
+    func increment func() int {
+        var x int
+        return func () int {
+            x++
+            return x
+        }
+    }
+
+    a := increment()
+    b := increment()
+    // If we call the functions in a and b, we'll see that they will each iterate INDEPENDENTLY of each other
+
+    // Let's look at an example of recursion
+
+    func factorial(n int) int {
+        if n == 0 {
+            return 1
+        }
+        return n * factorial(n-1)
+    }
+
+}
+```
+
+---
+
+### Lesson 8: Pointers
+* A pointer is just an address to a place in memory where a value is stored
+* In Go, we can see/access the address of any stored value using the `&` operator: `a := 42 // fmt.Println(&a)`
+* Like C, a pointer type is represented with `*`, `*int`, `*string` BUT we use the same symbol, `*` an an operator to deference a pointer/memory address:
+```golang
+a := 42
+b := &a // of type *int
+c := *b // 42
+*&a // 42 | We get the address using &, then get the value stored at that address using *
+
+// Note how we can mutate values stored in other variables using pointers and their operators
+// ALSO by passing pointers, we're able to manipulate values outside of local function scope
+a := 42
+b := &a
+*b := 52
+fmt.Println(a) // 52
+```
+When is it appropriate to use pointers?
+* If we're working with very large pieces of data, we can pass around their addresses as opposed to the data itself, helps performance to a degree
+* If a value needs to be changed that's at a certain location
+* Everything in Go is **passed by value**
+
+* Method sets determine what methods attach to a TYPE. It is exactly what says it is: The set of methods for a given type? That is its method set!
+    * A NON-POINTER receiver, recall: `func (c circle) area() float64 {...}`
+        * works with values that are POINTERS and NON-POINTERS
+    * A POINTER receiver
+        * *only* works with values that are POINTERS
+* Note that, when dereferencing a struct, use `(*value).field` BUT, as an exception, if the type of `x` is a named pointer type and `(*x).f` is a valid selector expressin denoting a field (but not a method), `x.f` is shorthand for `(*x).f`
+
+---
+
+### Lesson 9: Application
+More more example based section, good examples of working with `Writer` as well as `Marshal` and `Unmarshal` examples
+Also a great example of custom sorting such as by a type's field
+* Let's start looking at the standard library and some applications
+* When using the JSON package, we can use `Marshal` to convert data to JSON and `Unmarshal` to convert JSON data to something Go can work with
+* We can use `Encode` and `Decode` for a quicker, less methodical way to convert data to and from JSON
