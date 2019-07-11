@@ -362,3 +362,32 @@ Also a great example of custom sorting such as by a type's field
 * Let's start looking at the standard library and some applications
 * When using the JSON package, we can use `Marshal` to convert data to JSON and `Unmarshal` to convert JSON data to something Go can work with
 * We can use `Encode` and `Decode` for a quicker, less methodical way to convert data to and from JSON
+
+---
+
+### Lesson 10: Concurrency
+* A little history: 2006, Intel releases first dual-core processor and 2007, Go development begins with intent to natively take advantage of multiple cores
+* Let's review parallelism, concurrency, and the differences:
+    * **parallelism**: when tasks *literally* run at the same time e.g. on a multicore processor. A condition that exists when at least two threads are executing simultaneously
+    * **concurrency**: when two or more tasks can start, run, and complete in overlapping time periods. Doesn't mean they'll ever both be running at the same time. For example, *multitasking* on a multicore processor. A condition that exists when two threads are making progress.
+        * Note that concurrency is a design pattern, a way you can write code (concurrent parallel) that can run in parallel. It does NOT guarantee parallelism in any way
+    * Keep in mind some tasks may be *interruptible* and/or *independentable* which will affect the feasibility of concurrently executing a task [good example](https://stackoverflow.com/questions/1050222/what-is-the-difference-between-concurrency-and-parallelism?page=1&tab=votes#tab-top)
+
+How can we write concurrent code in Go? Let's go over new some keywords
+* `go <function call>` will launch something into its own Goroutine
+* `func init()` is run once before `func main()`, usually used to for web dev like setting up templates
+* Once `func main()` runs, program is terminated so in order to 'sync' the code in the newly created Goroutine, we can use package `sync`, particularly `WaitGroup`
+
+Quick reversion to method sets: **"The method set of a type determines the INTERFACE that the type implements"**
+
+Back to concurrent code:
+* In many different coding environments, concurrent programming can be made difficult by the subtleties requires to implement correct access to shared variables
+* We can encounter **race conditions**: when two or more threads (for our case, it's two or more Goroutines that could be yielding the thread back and forth e.g. concurrently or in parallel) that can access the same data aren't in sync with their read-write functionality or attempt to modify the shared data at the same time
+* "Do not communicate by sharing memory; instead, share memory by communicating"
+* *Goroutines* used because threads, coroutines, processes convey inaccurate connotations. Its a function executing concurrently with other goroutines in the same address space.
+    * prefix a function or method call with `go` to run the call in a new goroutine, note function literals can also be run in new routines with this syntax as well
+* Good example of creating a [race condition](https://play.golang.org/p/FYGoflKQej) and cool tip, you can use a flag, `-race` when running your code to see if a race condition is present `go run -race <file>`
+    * We have multiple goroutines accessing a shared variable `counter`
+    * To solve this, we need to treat this variable almost like checking out a book, when a goroutine checks it out, nothing else can
+    * We can implement this sort of design using a mutex, part of the `sync` package to essentially lock down parts of our code so that multiple goroutines cannot access the same variable at the same time
+    * Package `atomic` also offers solutions to race conditions
