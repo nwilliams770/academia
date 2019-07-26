@@ -74,14 +74,17 @@ Creating your own type:
 ---
 
 ### Lesson 3: Fundamentals
-A brief review of what's going on under the hood of our software:
+Under the hood of our software:
 * On & Off, 1 & 0, Binary Digits, Bits, and Machine Language are all words used to refer to this idea that, within a computer, it's all nothing but a bunch of ZERO's and ONE's, or switches that are ON or OFF. It's all just a bunch of binary digits or bits, that's the language which computers speak, it's machine language
-* Circuits, switches, transistors and even "gates" are all words used to refer to this thing within a computer that can either be ON or OFF. People use all of those words to talk abotu this same thing: the ability of computers to store ON / OFF states.
-* An example of one of the most common coding schemes today is **ASCII** and **UTF-8**
+* Binary digits are used to refer to the idea that, within a computer, the two core states of a circuit, switch, transistor, "gate", are either on or off 
 
 Review Numeral Systems:
-* Binary is base 2, meaning we have a ones place, twos place, fours place, eights place, and only two characters, 1 and 0; (6 => 110 | 10 => 1010 | 86 => 110000 | 7 => 111)
-* Hexadecimal is base 16, therefore using 16 characters, but because we only have 0-9 to represent numbers in our system, we use a-f to represent 10-15, ones place, 16's, 256's (75 => 49 | 10 => A | 911 => 38F)
+* Binary is base 2, 
+    * ones place, twos place, fours place, eights place, and only two characters, 1 and 0
+    * 6 => 110 | 10 => 1010 | 86 => 110000 | 7 => 111
+* Hexadecimal is base 16, therefore using 16 characters, but because we only have 0-9 to represent numbers in our system, we use a-f to represent 10-15
+    * ones place, 16's, 256's, etc. 
+    * 75 => 49 | 10 => A | 911 => 38F
 
 Constants:
 * constants are an unchanging value that can declared in different ways:
@@ -114,27 +117,37 @@ Bit Shifting:
 ---
 
 ### Lesson 5: Grouping Data (Aggregate Data Types)
-* Let's look at some data types and structures that we can use to group various amounts of data, of the same type and in some cases, not of the same type
+Arrays:
 * For arrays in Go, we must specify the size and type it will hold: `var x [5]int` => an `int` array of length 5
     * Note that the length of an array is part of its type! so `var x [5]int` and `var y [6]int` are technically different types :p
-* However, in Go, arrays are actually discouraged from use *in the documentation* as treated more so as a building block for slices
+* However, in Go, arrays are actually discouraged from use *in the documentation* as they are treated more so as a building block for slices
 
-Let's introduce slices:
+Slices:
 * We're going to create a slice using a **composite literal**, a way we can compose a bunch of values together of the same type:
-* From the docs: composite literals construct values for structs, arrays, slices, and maps and create a new value each time they're evaluated
+    * From the documentation: composite literals construct values for structs, arrays, slices, and maps and create a new value each time they're evaluated
 ```go
 x := type{values} // composite literal
 x := []int{4, 5, 6, 7, 8, 42}
 ```
-And now let's look at some things we can do with slices
-* We can get the length of it from the built-in `len` method, `len(x)`
-* We can index into a slice like we would an array, `x[0]`
-* We can loop over it, `for i, v := range x { ...block }` where `i` is our index and `v` is current value
-* We can slice a slice, using the `:` operator: `x[1:3]` => [5, 7] (the second value is up to and not including) | we don't need to provide a terminating index either, it'll default to the rest of the slice: `x[1:]` => [5 7 8 42]
-* We can append to a slice. `x = append(x, 77, 88)` => [4, 5, 6, 7, 8, 42, 77, 88]
-* We can append a slice to another, `y := []int{45, 46}`, `x = append(x, y...) // note the ... is like a spread operator, unfurls all the values of y`
+With slices we can:
+* We can get the length of it from the built-in `len` method
+    * `len(x)`
+* We can index into a slice like we would an array
+    * `x[0]`
+* We can loop over it
+    * `for i, v := range x { ...block }` where `i` is our index and `v` is the current value
+* We can slice a slice, using the `:` operator 
+    * `x[1:3]` => `[5, 6]` (the second value is up to and not including) 
+    * we don't need to provide a terminating index either, it'll default to the rest of the slice
+        * `x[1:]` => `[5, 6, 7, 8, 42]`
+* We can append to a slice. 
+    * `x = append(x, 77, 88)` => `[4, 5, 6, 7, 8, 42, 77, 88]`
+* We can append a slice to another, 
+    * `y := []int{45, 46}` | `x = append(x, y...)`
+        * note the `...` is like a spread operator, unfurls all the values of y`
     * To summarize, we cannot just append two slices, we must append values of the same type that the slice holds which is why we must unfurl the slice using `...`
-* We can delete from a slice, `x = append(x[:2], x[4:]...)` will remove the 3rd and 4th values from the slice
+* We can delete from a slice, 
+    * `x = append(x[:2], x[4:]...)` will remove the 3rd and 4th values from the slice
 
 * Most times you will use a composite literal to declare a slice but you can also do so using the built-in function `make([]T, length, capacity)`:
     * A slice, unlike an array, is dynamic in size and therefore takes a little more processing power when it's size needs to increase to fit more values (a new array must be created and all values must be copied over into it)
@@ -142,25 +155,32 @@ And now let's look at some things we can do with slices
     * We can use make like so: `x := make([], 10, 100)` => `[0,0,0,0,0,0,0,0,0,0]`, we can verify this by using `len(x) => 10` and `cap(x) => 100`
     * What would happen if we added more values than our capacity? Our array will double in size (note: definitely look up the algorithmic reasoning behind that, it's definitely most cost-effective to double the size)
 
-* Note that for slices we can have multi-dimensional, or nested, slices. These can be declared using the following syntax: `xp := [][]string{*slice1*, *slice2*, ..etc}`
+Note that for slices we can have multi-dimensional, or nested, slices: 
+* These can be declared using the following syntax: `xp := [][]string{*slice1*, *slice2*, ..etc}`
 
-Let's look at Maps now:
-* A hash map, key-value pairs, unordered list, very fast lookup (duhhh): `map[key]value{"James": 32,"Miss Moneypenny: 27,}`, `map[string]int{}` (note `map[string]int` *is* our type)
-* Note that in Golang, if you key into a map with a key that does not exist, you will get a zero value, this can be quite problematic as we don't know if the key exists of if it's corresponding value is 0, so there's a way to check: `v, ok := m["key that doesn't exist"]`
-    * v is the value and the optional indentifier (normally called ok) lets us know if that key exists
-    * A very common idiom (the comma-ok idiom) you may see is `if v, ok := m["James"]; ok { ...block }
-* To add a new item the map, we use same syntax we've used in previous languages, `m["new_key"] = value`
-* To remove an item from a map we can the built-in `delete` function: `delete(<map name>, "key")`
-* To iterate over a map, we can use `for..range`: `for k, v := range m { ...block }`
+Maps:
+* A hash map, key-value pairs, unordered list, very fast lookup: 
+    * `map[key]value{"James": 32,"Miss Moneypenny: 27,}`, `map[string]int{}` (note `map[string]int` *is* our type)
+    * In Golang, if you key into a map with a key that does not exist, you will get a zero value, this can be quite problematic as we don't know if the key exists of if it's corresponding value is 0, so there's a way to check 
+        * `v, ok := m["key that doesn't exist"]`
+            * v is the value and the optional indentifier (normally called ok) lets us know if that key exists
+    * A very common idiom (the comma-ok idiom) you may see is 
+        * `if v, ok := m["James"]; ok { ...block }`
+    * To add a new item the map, we use same syntax we've used in previous languages
+        * `m["new_key"] = value`
+    * To remove an item from a map we can the built-in `delete` function
+        * `delete(<map name>, "key")`
+    * To iterate over a map, we can use `for..range`
+        * `for k, v := range m { ...block }`
 
 ---
 
 ### Lesson 6: Structs
 * A struct is a data structure which allows us to compose together values of different type, it's an *aggregate* data structure or also known as a composite data struture
 * When structs are nested, noteworthy to mention that the inner type is 'promoted' to the outer type, which is to say, fields of the inner type become available via the outer type, this can be shown through accessing those promoted fields with dot notation
-* Note that structs may look a lot like objects but we use a different vocabulary to describe them, for example, we have an *instance* of an object but in Golang we call it a *value* of that type
-* Let's look at anonymous struct:
-    * There may be moments when we want to define a struct on the fly for quick use, we can use an anonymous struct for that as opposed to polluting our code with a named struct we'd only use once
+* Structs may look a lot like objects but we use a different vocabulary to describe them, for example, we have an *instance* of an object but in Golang we call it a *value* of that type
+Anonymous struct:
+* There may be moments when we want to define a struct on the fly for quick use, we can use an anonymous struct for that as opposed to polluting our code with a named struct we'd only use once
 ```golang
 // named
 type person struct {
@@ -175,17 +195,18 @@ p1 := struct {
     age int
 }
 ```
-* Is Golang OOP? Go has OOP aspects but it's all about TYPE. We create TYPES in Go, user-defined TYPES. We can then have VALUES of that type. We can assign VALUES of a user-defined TYPE to VARIABLES. Some of those aspects are:
-    * Encapsulation
-        * state ("fields")
-        * behavior ("methods")
-        * exported and unexported; viewable and not viewable
-    * Reusability
-        * inheritance ("embedded types")
-    * Polymorphism
-        * interfaces
-    * Overriding
-        * "promotion"
+* Is Golang OOP? 
+    * Go has OOP aspects but it's all about TYPE. We create TYPES in Go, user-defined TYPES. We can then have VALUES of that type. We can assign VALUES of a user-defined TYPE to VARIABLES. Some of those aspects are:
+        * Encapsulation
+            * state ("fields")
+            * behavior ("methods")
+            * exported and unexported; viewable and not viewable
+        * Reusability
+            * inheritance ("embedded types")
+        * Polymorphism
+            * interfaces
+        * Overriding
+            * "promotion"
 * In Go:
     * you don't create classes, you create a TYPE
     * you don't instantiate, you create a VALUE of a TYPE
@@ -194,7 +215,8 @@ p1 := struct {
 
 ### Lesson 7: Functions
 * All about being modular--we want to avoid spaghetti code, we can be modular in Go by using functions and packages
-* function structure is..`func (r receiver) indentifier(parameters) (return(s)) {...}`
+* function structure is..
+    * `func (r receiver) indentifier(parameters) (return(s)) {...}`
     * we define our function with parameters (if any) and we call our function and pass in arguments
 ```golang
 // multiple returns have to be in (), otherwise they don't have to be
@@ -204,6 +226,8 @@ func mouse(fn string, ln string) (string, bool) {
     return a, b
 }
 ```
+
+Variadic Params:
 * We can have variadic parameters in our functions, such as `func foo(x ...int)` but what type will `x` be if we call `foo(2, 3, 4, 5)`? A slice of `int`s
     * Keep this in mind when you work with variadic parameters so you know how to properly handle them in your functions!
     * Variadic parameters must be the LAST parameters in your function as well
@@ -214,14 +238,14 @@ x := foo(xi) // THIS WILL ERROR, foo accepts any number of ints NOT a slice of i
 x := foo(xi...) // With '...' we can 'unfurl' the slice and feed our function its contents e.g. ints!
 x := foo() // This ALSO works! variadic params can accept NOTHING and be just fine
 ```
-* Let's look at the `defer` keyword:
-    * It, as you can guess, defers the execution of a function
-    * Deferred functions will be called after their wrapper functions have returned
-    * When to use? We can use it when opening a file. After we open the file, inside that function we can call a deferred function to close it so we never leave files open
+The `defer` keyword:
+* It, as you can guess, defers the execution of a function
+* Deferred functions will be called after their wrapper functions have returned
+* When to use? We can use it when opening a file. After we open the file, inside that function we can call a deferred function to close it so we never leave files open
 
-* How about methods? Structs with functions
+Structs with methods:
 ```golang
-// ALL values of secretAgent can now access the 
+// ALL values of secretAgent can now access the speak method
 func (s secretAgent) speak() {
     fmt.Println("I am", s.first, s.last)
 }
@@ -233,6 +257,7 @@ sa1 := secretAgent{
     ltk: true,
 }
 ```
+
 * Interfaces allow us to define behavior and to do polymorphism:
 ```golang
 // 
@@ -243,10 +268,13 @@ type human interface {
     speak()
 }
 ```
+
+Multiple Types:
 * A value can be of more than one type! By assigning any type that has the method `speak` to type `human` as well, we can do human-specific things such as `speakHuman (h human) { fmt.Println("human speaking!)}`
     * As long as the argument contains the method `speak`, it can be used in `speakHuman`
     * This means that VALUES of other types such as `secretAgent` or `person` can also be passed to `speakHuman` as they both have `speak` methods
 
+Anon Funcs:
 * Go supports anonymous functions, syntax is quite similar to IIFEs in JavaScript:
 ```golang
 func main() {
@@ -322,7 +350,6 @@ func main() {
 
 }
 ```
-
 ---
 
 ### Lesson 8: Pointers
@@ -347,6 +374,7 @@ When is it appropriate to use pointers?
 * If a value needs to be changed that's at a certain location
 * Everything in Go is **passed by value**
 
+Method Sets and Receivers:
 * Method sets determine what methods attach to a TYPE. It is exactly what says it is: The set of methods for a given type? That is its method set!
     * A NON-POINTER receiver, recall: `func (c circle) area() float64 {...}`
         * works with values that are POINTERS and NON-POINTERS
@@ -366,20 +394,59 @@ Also a great example of custom sorting such as by a type's field
 ---
 
 ### Lesson 10: Concurrency
-* A little history: 2006, Intel releases first dual-core processor and 2007, Go development begins with intent to natively take advantage of multiple cores
-* Let's review parallelism, concurrency, and the differences:
-    * **parallelism**: when tasks *literally* run at the same time e.g. on a multicore processor. A condition that exists when at least two threads are executing simultaneously
-    * **concurrency**: when two or more tasks can start, run, and complete in overlapping time periods. Doesn't mean they'll ever both be running at the same time. For example, *multitasking* on a multicore processor. A condition that exists when two threads are making progress.
-        * Note that concurrency is a design pattern, a way you can write code (concurrent parallel) that can run in parallel. It does NOT guarantee parallelism in any way
-    * Keep in mind some tasks may be *interruptible* and/or *independentable* which will affect the feasibility of concurrently executing a task [good example](https://stackoverflow.com/questions/1050222/what-is-the-difference-between-concurrency-and-parallelism?page=1&tab=votes#tab-top)
+* 2006, Intel releases first dual-core processor and 2007, Go development begins with intent to natively take advantage of multiple cores
+* **parallelism**: when tasks *literally* run at the same time e.g. on a multicore processor. A condition that exists when at least two threads are executing simultaneously
+* **concurrency**: when two or more tasks can start, run, and complete in overlapping time periods. Doesn't mean they'll ever both be running at the same time. For example, *multitasking* on a multicore processor. A condition that exists when two threads are making progress.
+    * Note that concurrency is a design pattern, a way you can write code (concurrent parallel) that can run in parallel. It does NOT guarantee parallelism in any way
+* Keep in mind some tasks may be *interruptible* and/or *independentable* which will affect the feasibility of concurrently executing a task [good example](https://stackoverflow.com/questions/1050222/what-is-the-difference-between-concurrency-and-parallelism?page=1&tab=votes#tab-top)
 
-How can we write concurrent code in Go? Let's go over new some keywords
+Keywords in Go for writing concurrent code:
 * `go <function call>` will launch something into its own Goroutine
 * `func init()` is run once before `func main()`, usually used to for web dev like setting up templates
 * Once `func main()` runs, program is terminated so in order to 'sync' the code in the newly created Goroutine, we can use package `sync`, particularly `WaitGroup`
 
 Quick reversion to method sets: **"The method set of a type determines the INTERFACE that the type implements"**
 
+Good example detailing Pointer vs Value receivers: 
+```golang
+// The Preface
+// If you have a *T you can call methods that have a receiver type of *T as well as methods that have a receiver type of T (the passage you quoted, Method Sets).
+
+// If you have a T and it is addressable you can call methods that have a receiver type of *T as well as methods that have a receiver type of T, because the method call t.Meth() will be equivalent to (&t).Meth() (Calls).
+
+// If you have a T and it isn't addressable, you can only call methods that have a receiver type of T, not *T.
+
+// If you have an interface I, and some or all of the methods in I's method set are provided by methods with a receiver of *T (with the remainder being provided by methods with a receiver of T), then *T satisfies the interface I, but T doesn't. That is because *T's method set includes T's, but not the other way around (back to the first point again).
+
+// In short, you can mix and match methods with value receivers and methods with pointer receivers, and use them with variables containing values and pointers, without worrying about which is which. Both will work, and the syntax is the same. However, if methods with pointer receivers are needed to satisfy an interface, then only a pointer will be assignable to the interface — a value won't be valid.
+
+// Based on the above, this will run no problem!
+...
+type User struct{}
+
+func (self *User) SayWat() {
+  fmt.Println(self)
+  fmt.Println(reflect.TypeOf(self))
+  fmt.Println("WAT\n")
+}
+
+func main() {
+  var user User = User{}
+
+  fmt.Println(reflect.TypeOf(user), "\n")
+
+  user.SayWat()
+}
+
+// Yet this will not, return value is not addressable
+func aUser() User {
+    return User{}
+}
+
+...
+
+aUser().SayWat()
+```
 Back to concurrent code:
 * In many different coding environments, concurrent programming can be made difficult by the subtleties requires to implement correct access to shared variables
 * We can encounter **race conditions**: when two or more threads (for our case, it's two or more Goroutines that could be yielding the thread back and forth e.g. concurrently or in parallel) that can access the same data aren't in sync with their read-write functionality or attempt to modify the shared data at the same time
@@ -391,3 +458,8 @@ Back to concurrent code:
     * To solve this, we need to treat this variable almost like checking out a book, when a goroutine checks it out, nothing else can
     * We can implement this sort of design using a mutex, part of the `sync` package to essentially lock down parts of our code so that multiple goroutines cannot access the same variable at the same time
     * Package `atomic` also offers solutions to race conditions
+
+---
+
+### Lesson 10: Channels
+* A better way to write concurrent code, in a nutshell (good spot to review concurreency and anatomy of a channel in `relevant_tangents`)
