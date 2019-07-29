@@ -415,3 +415,57 @@ fetch(`/api/search?${queryParams}`)
 10. Importing components without relative paths
 Create a single `index.js` somewhere that exports references to each of your components
 Use webpack's `resolve.alias` to redirect `Components` to that index file
+
+---
+
+### React's Render Props [source](https://codeburst.io/reacts-render-props-technique-in-3-minutes-462862bf462e)
+* A technique for sharing logic between components. Components accept a prop that returns a func responsible for rendering something. Frees up component to focus on other logic
+
+When to use?
+* Repeating UI structures
+* Hooking into/subscribing to a data source
+* Hooking into global events (scroll, resize, etc)
+
+Do:
+* Use when there is an oppurtunity to share component/render logic
+
+Don't:
+* Overuse. Another pattern may be more appropriate
+* Avoid implementing render props with PureComponents unless your prop is statically defined
+```javascript
+class Watch extends Component {
+  state = {
+    date: moment(),
+  }
+
+  static propTypes = {
+    face: PropTypes.func,
+  }
+
+  static defaultProps = {
+    face: date => <DefaultFace date={date}/>
+  }
+  componentDidMount = () => (this.TICK = setInterval(this.update, 1000))
+  componentWillUnmount = () => clearInterval(this.TICK)
+  update = () => this.setState({ date: moment() })
+    // We want to be able to change our watch faces. So instead of writing multiple 
+    // Watch components, we will have Watch provide the current time and pass that to // a render prop.
+
+    // By doing this, we can have stateless Face components that render the time different ways
+  render = () => (
+    <Strap>
+      <Bezel>
+          {this.props.face(this.state.date)}
+      </Bezel>
+    </Strap>
+  )
+}
+
+// We can create a variety of different faces and just pass them to watch when we want them rendered
+const DefaultFace = ({ date }) => (
+  <Fragment>
+    <Value>{date.format("HH")}</Value>
+    <Value>{date.format("mm")}</Value>
+  </Fragment>
+)
+```
