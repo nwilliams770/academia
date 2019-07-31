@@ -5,6 +5,7 @@
 * Stack and Heap [source](http://net-informations.com/faq/net/stack-heap.htm)
 * Go Method Sets [source](https://stackoverflow.com/questions/33587227/golang-method-sets-pointer-vs-value-receiver) | [source](https://stackoverflow.com/questions/19433050/go-methods-sets-calling-method-for-pointer-type-t-with-receiver-t?rq=1)
 * Go's Scheduler [source](https://rakyll.org/scheduler/)
+* Context package
 
 ---
 
@@ -308,6 +309,18 @@ Generator:
 Fan-in & fan-out:
 * fan-in: multiplexing strategy where inputs of several channels are combined to produce an output channels
 * fan-out: demultiplexing strategy where a single channel is split into multiple channels
+
+---
+
+### Context [source](https://blog.golang.org/context)
+* In Go servers, each request handled by its own goroutine, which often start additional goroutines to access backend databases and services.
+* If a request is cancelled or times out, all goroutines working on that request should exit quickly so the system can reclaim any resources they are using (this can be called "leaking goroutines")
+
+Enter the `context` package:
+* easy to pass request-scoped values, cancelation signals, and deadlines across API boundaries to all goroutines pertaining to the request
+
+
+
 
 
 ### Lesson 1: Dev Environment

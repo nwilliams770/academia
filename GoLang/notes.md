@@ -49,6 +49,9 @@ Workspace (how computer and code is organized) in Go is quite opinionated for ef
 ---
 
 ### Lesson 2: Variables, Values, & Types
+**A Note About Exports/Imports in Go**
+* Controlled by naming conventions: lowercased => invisible/not accessible in when package is exported | uppercase => visible outside the package
+    * This is true with structs, methods
 Introduction to packages:
 * variadic parameters
     * `...<some type>` is how we signify a variadic param
@@ -463,3 +466,198 @@ Back to concurrent code:
 
 ### Lesson 10: Channels
 * A better way to write concurrent code, in a nutshell (good spot to review concurreency and anatomy of a channel in `relevant_tangents`)
+* Channels may be declared as bi-directional `c := make(chan int)` but within the scope of functions than be modified to be uni-directional `func send(c chan<- int) {}`
+
+**Range, Select, Comma-ok idiom, Fan In, Fan Out, Context:**
+Range:
+* `for range` loop can be used to pull values from a channel *until that channel is closed*; if channel is never closed we will have a deadlock
+```golang
+func main() {
+    c := make(chan int)
+
+    go func() {
+        for i := 0; i < 5; i++ {
+            c <- i
+        }
+        close(c)
+    }
+
+    // Notice how, to send, we create a new goroutine but for receiving we do not, why? If we received in another goroutine, our func main would most likely terminate before the values could be received.
+
+    // Receiving within func main deadlocks the main thread, so we receive all values of the channel before the program terminates 
+    for v := range c {
+        fmt.Println(v)
+    }
+}
+```
+
+Select:
+* Essentially a `switch` statement for channels, also utilizes `case` statements
+* Can be used in conjunction with an infiite `for` loop to run everything on the channel through the `select` statement; just make sure to have a `return` mechanism built-in so you're able to 
+
+Comma ok idiom:
+* We can use to comma ok idiom to check if a channel is closed `v, ok := <-c`
+* Particularly useful for when we are in one of those `select` statements or infinite `for` loops:
+    * `case i, ok := <-quit:`...`if !ok { fmt.Println("no more values in channel) return}`
+ 
+Fan in:
+* Taking values from many channels and putting them into one channel
+* These values can be of any type, even channels!
+[Interesting example by Rob Pike](https://play.golang.org/p/buy30qw5MM)
+
+Fan out:
+* Taking a piece of work, that may need to be done many number of times, and spreading that out amongst a number of processes to complete each individual task
+* Note that this design pattern can be coupled with throttling (regulating the rate at which the work is done) so that not all of our hardware resurces are exhausted on doing all those tasks
+    * We can say, for example, to encode only 10 videos at a time instead of encoding all 200 of them at once
+* [Example with throttling](https://play.golang.org/p/RzR3Kjrx7q)
+
+Context:
+* This is gone into greater detail in `relevant_tangents` but it is essentially a means of closing multiple goroutines all associated with a singular task or request to be cancelled at once e.g. sending a cancellation signal
+
+### Lesson 11: Error Handling
+* `error` is a type as well as an interface that implements the following method: `Error() string`; this allows us to write our own custom errors, provide structs with fields to have more detailed info, lots of stuff!
+Checking Errors:
+* do not get into the habit of throwing away your errors with `_`, check them!
+```golang
+    f, error := os.Create("names.txt")
+    if err != nil {
+        fmt.Println(err)
+        return
+    }
+    defer f.Close()
+
+    r := strings.NewReader("James Bond")
+
+    io.Copy(f, r)
+```
+
+Printing and Logging Errors:
+* We have a variety of tools when it comes to printing and logging errors
+    * `fmt.Println()`
+    * `log.Println()` | can write to a file as well as stout
+    * `log.Fatalln()`
+        * os.Exit()
+    * `log.Panicln()`
+        * deferred functions run
+        * can use `recover`
+
+Adding info to errors:
+* We can write custom errors and make them a little more detailed and verbose by either:
+    * `errors.New("<error_name>")` | `var newError = errors.New("<error_name>")`
+    * `fmt.Errorf("<error_name>")` | `var newError = fmt.Errorf("<error_name>")`
+* We can also create our own error struct that will implicity implement the Error interface:
+```golang
+type arbitraryError struct {
+    greeting string
+    err error 
+}
+
+func (a arbitraryError) Error() string {
+    return fmt.Sprintf("an arbitrary erorr occured %v %v", a.greeting, a.err)
+}
+
+func main() {
+    _, err := errorMaker(-1)
+    if err != nil {
+        log.Println(err)
+    }
+}
+
+func errorMaker(i int) (int, error) {
+    if i < 0 {
+        ae := fmt.Errorf("arbitraryError: i less than zero")
+        return 0, arbitraryError("Why'd you do that!?", ae)
+    }
+    return i, nil
+}
+```
+
+---
+
+### Lesson 12: Documentation
+* godoc.org has documentation for stdlib and third-party packages
+* golang.org, documentation for stdlib
+
+`go doc (<package>)`:
+* CLI command to read go documentation from the terminal
+* will pull documentation on whatever package you are currently in
+
+godoc:
+* You can run a local server and review documentation from this local server
+* `godoc -http=:8080`
+* `godoc <package>` | Provides all the descriptins of a package, not just a list of methods
+* `godoc -src <package> <method>` allows you to see source code
+
+Writing doc:
+* Above any exported struct, method, function, package, write a comment directly above, this will be your documentation:
+```golang
+// Package blah checks for signs of life in a post-apocalyptic world
+package blah
+
+// Foo does not return anything but prints string that checks for signs of life
+func Foo() {
+    fmt.Println("hello...world?")
+}
+
+// this note should describe what lilFoo does but because lilFoo is not exported, this is not part of our documentation just an internal note
+func lilFoo() {
+    fmt.Println("hello...is me you're looking for?")
+}
+```
+* when you have a lot of info to write about the package you can use a doc.go file
+```golang
+// All my comments, examples, formatting, what have you live here
+// 
+// ....
+// 
+package fmt  // at the very bottom is where we specify what package this is for
+```
+
+---
+
+### Lesson 13: Testing and Benchmarking
+* Tests must:
+    * be a file that ends with `_test.go`
+    * put the file in the same package as the one being tested
+    * be in a func with a signature `func TestXxx()`
+* Run a test:
+    * `go test`
+* Dead with test failure
+    * use the `Error`, `Fail` or related methods to signal failure
+
+Table Tests:
+* Series of tests with ran against a set of data, allows us to test multiple pieces of data at once
+Example
+```golang
+func TestMySum(t *testing.T) {
+    type test struct {
+        data []int
+        answer int
+    }
+
+    tests := []test{
+        test{[]int{21, 21},42},
+        test{[]int{3, 4, 5},12},
+        test{[]int{1, 1},2},
+        test{[]int{-1, 0, 1},0},
+        test{[]int{10, -3, -8},-1},
+    }
+
+    for _,v := range tests {
+        x := mySum(v.data...)
+        if x != v.answer {
+            t.Error("Expected", v.answer, "Got", x)
+        }
+    }
+}
+```
+Golint:
+* `gofmt` | formats go code
+* `go vet` | reports suspicious constructs
+* `golint` | reports poor coding style
+
+Benchmarking:
+* A means of testing the performance of your code; optimizing implementation in order to create most performant code
+
+Coverage:
+* Proportion of how much of your code is tested, can run coverage analysis using Go
