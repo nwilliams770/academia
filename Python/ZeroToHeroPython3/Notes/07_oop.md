@@ -13,3 +13,4 @@ class Dog(Animal):
         Animal.__init__(self)
 ```
 * Dunder/Special Methods
+    - Methods such as `__str__` that can be overridden in a class in order to customize its representation
