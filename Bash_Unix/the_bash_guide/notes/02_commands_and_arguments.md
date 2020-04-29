@@ -70,3 +70,57 @@ name **()** compound-command [ redirection ]
 * Enter `PATH` *environment variable* which contains a set of directories that should be searched for programs
 * Bash looks through these listed directories whenever you try to start a program it doesn't yet know the location of
 * To find where bash finds program for a command name, you can use the `type` built-in to find out (this is a more verbose response, if you need that for output you can use `which` which just returns the path)
+* Sometimes you'll need to run a program that isn't installed in any of the PATH directories, in that case; you'll have to specify the path where bash can find that program (using an absolute path)
+* In summary: when bash needs to a run a program, it uses the command name to perform a search. Searches the directories in PATH env variable, one by one, until it finds a directory that contains a program with the name of your command. To run a program not installed in a PATH directory, use the path to that program as your command's name
+
+* The gross part of all bugs in bash shell are the direct result of their authors not properly understand command arguments
+    - When we say "words" in the context of bash, we do NOT mean linguistic words
+    - In bash, a word is defined as a sequence of chars considered a single unit by the shell. A word is also known as a token.
+    - A bash word can contain many linguistic words
+    - In bash, blank space is syntax just like anything else; it means "break up the previous apart from the next thing"; aka word splitting
+* What about when a blank space is part of a file name or anything else? Two ways to make characters literal: quoting and escaping
+    - quoting is wrapping chars in `"` or `'`
+    - escaping is practice of placing a single `\` char in front of the char that we want to make literal
+    - recommended to use quotes over escaping; clearer and more readable
+    - if in doubt, quote your data! and never remove quotes to try to make something work
+    - use double-quotes for any argument that contains expansions (such as `$variable` or `$(command)` expansions) and single quotes for any other arguments
+* The rule:
+    - if there is whitespace or a symbol in your arg, you must quote it
+    - if there isn't, quotes are usually optional but you can still quote it to be safe
+* Summary: To tell a command what to do, we pass it arguments. In bash, arguments are tokens, also called words, that are separated from each other by blank space. To include blank space in an argument's value, you need to either quote the argument or escape the blank spacee within. Failing that, bash will break your argument apart into multiple arguments at its blank space.Quoting arguments also prevents other symbols in it from being accidentally interpreted as bash code, such as '$10 USD' (variable expansions), "*** NOTICE ***" (filename expansions)
+
+### Managing a command's input/output using redirection
+* Processes use file descriptors to connect to streeams; each process will generally have three standard file descripters: stin (FD 0), stout (FD 1), sterr (FD 2)
+* When bash starts a program, it sets up a set of file descriptors for that progrma first; it does this by looking at its own file descriptors and setting up an indetical set for the new process; we say new processes **inherit** bash's file descriptors.
+    - when you open a new terminal shell, the terminal will ahve set up bash by connection file's input and output to the terminal (this is how keyboard input ends up in bash and bash's messages end up in the terminal window)
+    - each time bash starts a program of its own, its gives that program a set of file descriptors to match its own
+* We must employ *redirection* if we want to gain control over where our commands connect to: the practice of changing the source or destination of a file descriptor.
+* Redirecting stout is done using the `>` operator; most common and useful form of redirection
+* Another common use of redirection is for hiding error messages
+
+`ls -l a b >myfiles.ls 2>/dev/null`
+* In this case, we are redirecting stout to `myfiles.ls` and sterr to `/dev/null`
+* Note how we can redirect any file descriptor (FD) by prefixing the `>` operator with the number of the FD. If a number if omitted, out redirections default to redirecting FD 1, stdout
+* In our prev example, if we actually looked inside `/dev/null` using `cat /dev/null` we wouldn't see our error messages, why is that?
+    - the file `null` is in the `/dev` directory
+    - this is a special directory for *device files*
+    - Device files are special files that represent devices in our system
+    - When we write to or read from them, we're communicating directly with those devices through the kernel
+    - The `null` device is a special device that is always empty; anything you write to it will be lost and nothing can be read from it; makes it useful for discarding information
+
+* Back to our example, if wanted to save all output that would appear on the terminal (stout and sterr), we might think of doing something like:
+
+`ls -l a b >myfiles.ls 2>myfiles.ls`
+
+* THIS IS WRONG! Problem is that both FDs now have their own stream to the file which means both streams could be writing at the same time so you'd get an arbitrary garbled mix-together of the streams
+* To solve this, we have to send both output and error bytes on **the same stream** and to do that, we have to duplicate FDs
+
+`ls -l a b >myfiles.ls 2>&1`
+
+* "copying" or duplicating FDs, is the act of copying one FD's stream connection to another FD. As a result, both FDs are connected to the same stream. We use the `>&` operator, prefixing it with the FD we want to change and following it with the FD whose stream we need to "copy"
+* An important rule to note with redirecting FDs: redirections are eval'd from left to right.
+
+`ls -l a b 2>&1 >myfiles.ls`
+* Redirects FD 2's output to FD 1; which, at the time of eval, is probably the *terminal*; we can correct this by fixing the order of redirections like so:
+`ls -l a b >myfiles.ls 2>&1`
+* We first change the FD 1's target to stream to `myfiles.ls` then make FD 2 target the same as FD 1, which is the new stream to `myfiles.ls`
