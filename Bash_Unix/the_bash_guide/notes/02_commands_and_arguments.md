@@ -121,6 +121,54 @@ name **()** compound-command [ redirection ]
 * An important rule to note with redirecting FDs: redirections are eval'd from left to right.
 
 `ls -l a b 2>&1 >myfiles.ls`
+
 * Redirects FD 2's output to FD 1; which, at the time of eval, is probably the *terminal*; we can correct this by fixing the order of redirections like so:
+
 `ls -l a b >myfiles.ls 2>&1`
+
 * We first change the FD 1's target to stream to `myfiles.ls` then make FD 2 target the same as FD 1, which is the new stream to `myfiles.ls`
+
+
+* Reviewing some redirection operators:
+* **File redirection**: Make FD x write to / read from *file*
+`[x]>file, [x]<file`
+* A stream to file is opened for either writing or reading and connected to file descriptor x. When x is omitted, it defaults to FD 1 (stdout) when writing and FD 0 (stin) when reading.
+
+* **File descriptor copying**: Make FD x write to / read from FD y's stream
+`[x]>&y, [x]<&y`
+`ping 127.0.0.1 >results 2>&1`
+`exec 3>&1 >mylog;`
+* The connection to the stream used by FD y is copied to FD x. If you use an x that doesn't yet exist, bash will create a new FD ("plug") for you with that number.
+
+* **Appending file redirection**: Make FD x append to the end of the file
+`[x]>>file`
+* A stream to file is opened for writing in append mode and is connected to FD x. Regular file redirection operator > empties the file's content when it opens the file so that only your bytes will be in the file. In append mode (>>), the file's existing contents is left and your stream's bytes are added to the end of it.
+
+* **Redirecting stout and stderr**: Make both FD 1 (stdout) and FD 2 (sterr) write to file
+`&>file`
+`ping 127.0.0.1 &>results`
+* Convenience operator which does the same thing as `> file 2>&1` but more concise; can append rather than truncate by double the arrow `&>>file`
+
+* **Here Doc**: Make FD 0 (stdint) read from the str between the delimiters.
+` **<<**[-]delimiter`
+   ` here-doc`
+`delimiter`
+* great way to feed large blocks of text to a command's input. white space sensitive! begin on *line after your delimiter* and end *when basee encounters a line with just your delimiter on it*.
+* Can prefix with `-`, tells bash to ignore any tabs you put in front of your heredec so you can indent with indenting showing in input str.
+
+* **Here Strings**: Make FD 0 read from the string
+`**<<<** string`
+* similar to here docs but more concise. generally preferred
+
+* **Closing file descriptors**: Close FD x.
+`x>&-, x<&-`
+* Stream disconnected from FD x and the FD is removed from the process. it cannot be used again until it is recreated. When x omitted, `>&-` defaults to closing stdout and `<&-` defaults to closing stin. rarely used
+
+* **Reading and writing with a FD**: open FD x for both reading and writing to file
+`[x]**<>**file`
+* FD at x opened with a stream to the file that can be used to read and write. Usually use two FDs for this. One rare case where this is useful is when setting up a stream with read/write device such as a network socket.
+
+* Final note: for simple commands, the redirection operators can appear anywhere e.g. don't need to appear at the end, even though it is good to for consistency and to avoid surprise.
+
+* In summary: new commands inherit the shell's current FDs. We can use redirections to change where a command's input comes from and where its output should go to. File redirection allows us to stream FDs to files. We can copy FDs to make them share a stream as well as other more advanced redirection operators
+
