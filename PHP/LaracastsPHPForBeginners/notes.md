@@ -31,8 +31,52 @@ $ages = array('John'=>35,'Jane'=>25)
 $hair_colors = ['John'=>'brown','Jane'=>'blonde']
 ```
 
+
 **Side note:** we can use `vardump()` to print types such as arrays and associative arrays. Also common practice to see `die(vardump())`, essentially print the var then exit.
 
+## Conditionals
+* Ternary: same as in JS
+* if, else..same syntax as JS
 
+## Functions
+```php
+function name($arg1, $arg2, $arg3) {
+  ...
+}
+```
 
+## Classes
+```php
+class Task {
+  protected $description;
+  protected $completed = false;
 
+  public function __construct($description)
+
+  {
+    $this->description= $description
+  }
+
+  public function isComplete()
+
+  {
+    return $this->completed;
+  }
+
+  public function complete()
+
+  {
+    $this->completed = true;
+  }
+}
+
+new Task('Learn PHP basics');
+```
+
+## PDO, Error Handling
+```php
+try {
+  $pdo = new PDO('mysql:host=127.0.0.1;dbname-todo', 'root', '');
+} catch (PDOException $e->getMessage()) {
+  die('Could not connect');
+}
