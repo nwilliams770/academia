@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Full Bézier Curve Visualizer</title>
+	<script src="curves-math.js"></script>
+	<script src="draw-helpers.js"></script>
+	<style>
+		body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+		h1 { margin-top: 0; }
+		.main { display: flex; gap: 40px; }
+		canvas { border: 2px solid #333; background: white; cursor: crosshair; }
+		.sidebar { display: flex; flex-direction: column; gap: 20px; min-width: 280px; }
+		.panel { background: white; padding: 15px; border: 1px solid #ccc; border-radius: 4px; }
+		.panel h3 { margin-top: 0; }
+		.checkbox-group { display: flex; flex-direction: column; gap: 8px; }
+		.checkbox-group label { display: flex; align-items: center; gap: 8px; cursor: pointer; }
+		.legend { display: flex; align-items: center; gap: 8px; font-size: .9em; margin: 3px 0; }
+		.legend-box { width: 18px; height: 18px; border-radius: 2px; border: 1px solid #999; }
+		.info { font-family: monospace; font-size: .85em; line-height: 1.6; }
+		.note { font-size: .8em; color: #666; margin-top: 8px; }
+	</style>
+</head>
+<body>
+
+<h1>Full Cubic Bézier Visualizer</h1>
+
+<div class="main">
+	<div>
+		<canvas id="canvas" width="800" height="600"></canvas>
+		<p style="font-size:.9em;color:#666;">Drag the control points to manipulate the curve.</p>
+	</div>
+
+	<div class="sidebar">
+		<div class="panel">
+			<h3>Show</h3>
+			<div class="checkbox-group">
+				<label><input type="checkbox" id="showCurve" checked> Curve</label>
+				<label><input type="checkbox" id="showControlPolygon" checked> Control polygon</label>
+				<label><input type="checkbox" id="showConvexHull" checked> Convex hull</label>
+				<label><input type="checkbox" id="showBasisFunctions" checked> Basis functions</label>
+			</div>
+		</div>
+
+		<div class="panel">
+			<h3>Basis Functions</h3>
+			<div class="legend"><div class="legend-box" style="background:red"></div><span>b₀(t) = (1−t)³ &nbsp;→ P₀</span></div>
+			<div class="legend"><div class="legend-box" style="background:green"></div><span>b₁(t) = 3(1−t)²t &nbsp;→ P₁</span></div>
+			<div class="legend"><div class="legend-box" style="background:blue"></div><span>b₂(t) = 3(1−t)t² &nbsp;→ P₂</span></div>
+			<div class="legend"><div class="legend-box" style="background:orange"></div><span>b₃(t) = t³ &nbsp;→ P₃</span></div>
+			<div class="note">
+				At every t the four heights sum to 1. Note b₁ and b₂ are zero at
+				both ends — that's why the curve never touches P₁ and P₂.
+			</div>
+		</div>
+
+		<div class="panel">
+			<h3>Control Points</h3>
+			<div class="info">
+				<div id="p0Info">P₀: (0, 0)</div>
+				<div id="p1Info">P₁: (0, 0)</div>
+				<div id="p2Info">P₂: (0, 0)</div>
+				<div id="p3Info">P₃: (0, 0)</div>
+			</div>
+		</div>
+	</div>
+</div>
+
+<script src="curves-viz.js"></script>
+</body>
+</html>

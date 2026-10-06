@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Continuity Visualizer</title>
+<script src="curves-math.js"></script>
+<script src="draw-helpers.js"></script>
+<script src="continuity-exercises.js"></script>
+<style>
+	body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+	h1 { margin-top: 0; }
+	.main { display: flex; gap: 20px; flex-wrap: wrap; }
+	.viz-panel { background: white; padding: 16px; border: 1px solid #ccc;
+	             border-radius: 4px; width: 400px; }
+	.viz-panel h3 { margin: 0 0 10px 0; }
+	canvas { border: 1px solid #333; background: white; display: block; }
+	.control-row { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+	input[type=range] { flex: 1; }
+	.val { font-family: monospace; min-width: 52px; text-align: right; }
+	.info { background: #f9f9f9; padding: 10px; border: 1px solid #ddd;
+	        font-size: .82em; line-height: 1.5; }
+	.status { font-family: monospace; font-weight: bold; }
+	em { color: #555; }
+</style>
+</head>
+<body>
+
+<h1>Continuity Visualizer</h1>
+<p style="color:#666">Segment 1 (dark red) is identical in every panel. Each slider breaks one level of continuity.</p>
+
+<div class="main">
+
+<div class="viz-panel">
+	<h3>C⁰ — positional</h3>
+	<canvas id="c0-canvas" width="368" height="280"></canvas>
+	<div class="control-row">
+		<label>Gap</label>
+		<input type="range" id="c0-gap" min="0" max="40" value="0" step="1">
+		<span class="val" id="c0-val">0</span>
+	</div>
+	<div class="info">
+		<strong>f₁(1) = f₂(0)</strong> — the curves meet.<br>
+		<span class="status" id="c0-status">—</span><br><br>
+		<em>Even at gap 0 there is a visible CORNER. C⁰ only buys you "no hole" —
+		the tangents are still free to disagree.</em>
+	</div>
+</div>
+
+<div class="viz-panel">
+	<h3>C¹ — tangent</h3>
+	<canvas id="c1-canvas" width="368" height="280"></canvas>
+	<div class="control-row">
+		<label>Rotate</label>
+		<input type="range" id="c1-angle" min="-80" max="80" value="0" step="1">
+		<span class="val" id="c1-val">0°</span>
+	</div>
+	<div class="info">
+		<strong>f₁'(1) = f₂'(0)</strong> — same direction AND magnitude.<br>
+		<span class="status" id="c1-status">—</span><br><br>
+		<em>At 0° the two blue legs form one straight line and the joint is their
+		midpoint. That collinearity IS the C¹ condition — and it's what a pen tool
+		enforces when one handle swings to mirror the other.</em>
+	</div>
+</div>
+
+<div class="viz-panel">
+	<h3>C² — curvature</h3>
+	<canvas id="c2-canvas" width="368" height="280"></canvas>
+	<div class="control-row">
+		<label>Move q₂</label>
+		<input type="range" id="c2-off" min="-60" max="60" value="0" step="1">
+		<span class="val" id="c2-val">0</span>
+	</div>
+	<div class="info">
+		<strong>f₁''(1) = f₂''(0)</strong> — accelerations agree.<br>
+		<span class="status" id="c2-status">—</span><br><br>
+		<em>Drag it: C¹ stays true, C² goes false, and <strong>nothing visibly
+		changes</strong>. No corner appears. That's the honest answer to "why would
+		I need C²" — you don't, for silhouette. You need it for reflections off a
+		surface and for motion without jerk.</em>
+	</div>
+</div>
+
+<div class="viz-panel">
+	<h3>G¹ vs C¹ — same shape, different speed</h3>
+	<canvas id="g1-canvas" width="368" height="280"></canvas>
+	<div class="control-row">
+		<label>Tangent length</label>
+		<input type="range" id="g1-scale" min="0.3" max="2.5" value="1" step="0.05">
+		<span class="val" id="g1-val">1.00×</span>
+	</div>
+	<div class="info">
+		<strong>G¹</strong>: tangents parallel. <strong>C¹</strong>: tangents equal.<br>
+		<span class="status" id="g1-status">—</span><br><br>
+		<em>Dots are drawn at uniform steps of t. The shape stays smooth at any
+		scale — but watch the dot spacing JUMP at the joint when scale ≠ 1. Shape
+		work: G¹ is fine. Animating along the path: that jump is a visible lurch.</em>
+	</div>
+</div>
+
+</div>
+<script src="continuity-viz.js"></script>
+</body>
+</html>
