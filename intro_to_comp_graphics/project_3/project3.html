@@ -10,27 +10,34 @@
 // Below is the code for the object that draws lines.
 ///////////////////////////////////////////////////////////////////////////////////
 // CLAUDE NOTE: This class is a complete example of how to draw with WebGL.
-// CLAUDE NOTE: You'll follow a similar pattern for the CurveDrawer class.
+// You'll follow a similar pattern for the CurveDrawer class.
 class LineDrawer {
 	constructor()
 	{
 		// CLAUDE NOTE: The constructor sets up everything WebGL needs to draw.
-		// CLAUDE NOTE: Step 1: Compile the shader program (vertex + fragment shaders)
-		// CLAUDE NOTE: linesVS and linesFS are defined below (lines 61-76)
+		// Step 1: Compile the shader program (vertex + fragment shaders)
+		// linesVS and linesFS are defined below (lines 61-76)
 		this.prog = InitShaderProgram( linesVS, linesFS );
 
 		// CLAUDE NOTE: Step 2: Get references to the shader's uniform variables.
-		// CLAUDE NOTE: Uniforms are variables that stay constant for all vertices in a draw call.
-		// CLAUDE NOTE: 'mvp' stands for Model-View-Projection matrix - it transforms our coordinates.
+		// Uniforms are variables that stay constant for all vertices in a draw call.
+		// 'mvp' stands for Model-View-Projection matrix - it transforms our coordinates.
+		// IMPORTANT: this.mvp is NOT the matrix data itself! It's a WebGLUniformLocation
+		// (an opaque handle/reference that points to where the uniform lives in GPU memory).
+		// Think of it like a mailbox address - you'll use it later to send data to the GPU.
 		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
 
 		// CLAUDE NOTE: Step 3: Get references to the shader's vertex attributes.
-		// CLAUDE NOTE: Attributes are per-vertex data (each vertex can have different values).
-		// CLAUDE NOTE: 'pos' is the position attribute - it will receive x,y coordinates for each vertex.
+		// Attributes are per-vertex data (each vertex can have different values).
+		// 'pos' is the position attribute - it will receive x,y coordinates for each vertex.
+		// IMPORTANT: this.vertPos is just an integer index (like 0, 1, 2), NOT the position data!
+		// It's a "slot number" that says which attribute we're talking about.
+		// The actual position data comes from the buffer and changes for each vertex automatically.
 		this.vertPos = gl.getAttribLocation( this.prog, 'pos' );
 
 		// CLAUDE NOTE: Step 4: Create a buffer to hold vertex data on the GPU.
-		// CLAUDE NOTE: We create it here but don't fill it yet - that happens in updatePoints().
+		// We create it here but don't fill it yet - that happens in updatePoints().
+		// this.buffer is a WebGLBuffer (another opaque handle to GPU memory).
 		this.buffer = gl.createBuffer();
 		// We are not filling the contents of the buffer here,
 		// because we will put the control points into this buffer.
@@ -38,96 +45,109 @@ class LineDrawer {
 	setViewport( width, height )
 	{
 		// CLAUDE NOTE: This method is called when the window resizes.
-		// CLAUDE NOTE: It creates an orthographic projection matrix to map pixel coordinates to WebGL's clip space.
-		// CLAUDE NOTE: WebGL clip space ranges from -1 to +1 in both x and y.
-		// CLAUDE NOTE: This matrix transforms: pixels -> clip space
-		// CLAUDE NOTE: The matrix is in column-major order (WebGL standard):
-		// CLAUDE NOTE: [2/width, 0, 0, 0,    <- scales x from [0,width] to [0,2]
-		// CLAUDE NOTE:  0, -2/height, 0, 0,  <- scales y from [0,height] to [0,-2] (flips y-axis)
-		// CLAUDE NOTE:  0, 0, 1, 0,          <- z unchanged (we're doing 2D)
-		// CLAUDE NOTE:  -1, 1, 0, 1]         <- translates to shift range to [-1,1]
+		// It creates an orthographic projection matrix to map pixel coordinates to WebGL's clip space.
+		// WebGL clip space ranges from -1 to +1 in both x and y.
+		// This matrix transforms: pixels -> clip space
+		// The matrix is in column-major order (WebGL standard):
+		// [2/width, 0, 0, 0,    <- scales x from [0,width] to [0,2]
+		//  0, -2/height, 0, 0,  <- scales y from [0,height] to [0,-2] (flips y-axis)
+		//  0, 0, 1, 0,          <- z unchanged (we're doing 2D)
+		//  -1, 1, 0, 1]         <- translates to shift range to [-1,1]
 		var trans = [ 2/width,0,0,0,  0,-2/height,0,0, 0,0,1,0, -1,1,0,1 ];
 		gl.useProgram( this.prog );
-		// CLAUDE NOTE: uniformMatrix4fv sends a 4x4 matrix to the shader's uniform variable.
-		// CLAUDE NOTE: Parameters: (location, transpose?, data)
+		// CLAUDE NOTE: uniformMatrix4fv sends the matrix to GPU memory at the location this.mvp points to.
+		// We're NOT storing the matrix in this.mvp (it's just a location handle).
+		// The GPU stores it in the uniform variable, and the shader will read it from there.
+		// Parameters: (location, transpose?, data)
 		gl.uniformMatrix4fv( this.mvp, false, trans );
 	}
 	updatePoints( pt )
 	{
 		// CLAUDE NOTE: This method is called whenever the user drags a control point.
-		// CLAUDE NOTE: It extracts x,y coordinates from the SVG circles and puts them in the GPU buffer.
+		// It extracts x,y coordinates from the SVG circles and puts them in the GPU buffer.
 
 		// The control points have changed, so we must update
 		// the data in the in the vertex buffer
 		var p = [];
-		// CLAUDE NOTE: Loop through all 4 control points
+		// Loop through all 4 control points
 		for ( var i=0; i<4; ++i ) {
-			// CLAUDE NOTE: Get the x and y coordinates from the SVG circle elements
+			// Get the x and y coordinates from the SVG circle elements
 			var x = pt[i].getAttribute("cx");
 			var y = pt[i].getAttribute("cy");
-			// CLAUDE NOTE: Add them to our array in x,y,x,y,x,y,x,y format
+			// Add them to our array in x,y,x,y,x,y,x,y format
 			p.push(x);
 			p.push(y);
 		}
 		// CLAUDE NOTE: Now we upload this data to the GPU:
-		// CLAUDE NOTE: Step 1: Bind our buffer as the active ARRAY_BUFFER
+		// Step 1: Bind our buffer as the active ARRAY_BUFFER
 		gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
-		// CLAUDE NOTE: Step 2: Fill it with our point data
-		// CLAUDE NOTE: new Float32Array(p) converts JavaScript array to typed array for GPU
-		// CLAUDE NOTE: STATIC_DRAW tells GPU this data won't change often (optimization hint)
+		// Step 2: Fill it with our point data
+		// new Float32Array(p) converts JavaScript array to typed array for GPU
+		// STATIC_DRAW tells GPU this data won't change often (optimization hint)
 		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(p), gl.STATIC_DRAW);
 	}
 	draw()
 	{
 		// CLAUDE NOTE: This method actually draws the lines on screen.
-		// CLAUDE NOTE: It's called every time we need to redraw (e.g., after dragging a point).
+		// It's called every time we need to redraw (e.g., after dragging a point).
 
 		// Draw the line segments
 		// CLAUDE NOTE: Step 1: Activate our shader program
 		gl.useProgram( this.prog );
 		// CLAUDE NOTE: Step 2: Bind our vertex buffer
+		// We must re-bind every time because buffer binding is GLOBAL WebGL state.
+		// If curveDrawer.draw() ran before this, it would have bound a different buffer!
 		gl.bindBuffer( gl.ARRAY_BUFFER, this.buffer );
 		// CLAUDE NOTE: Step 3: Tell WebGL how to read data from the buffer
-		// CLAUDE NOTE: Parameters: (attribute location, components per vertex, data type, normalized?, stride, offset)
-		// CLAUDE NOTE: We're saying: "The 'pos' attribute has 2 floats per vertex (x,y), tightly packed"
+		// Parameters: (attribute location, components per vertex, data type, normalized?, stride, offset)
+		// We're saying: "For attribute slot #this.vertPos, read 2 floats per vertex (x,y), tightly packed"
+		// This describes the memory layout, not the data itself.
 		gl.vertexAttribPointer( this.vertPos, 2, gl.FLOAT, false, 0, 0 );
-		// CLAUDE NOTE: Step 4: Enable this vertex attribute
+		// CLAUDE NOTE: Step 4: Enable this vertex attribute (disabled by default)
 		gl.enableVertexAttribArray( this.vertPos );
-		// CLAUDE NOTE: Step 5: Draw!
-		// CLAUDE NOTE: LINE_STRIP connects vertices in order: p0->p1->p2->p3
-		// CLAUDE NOTE: Parameters: (primitive type, starting vertex, number of vertices)
+		// CLAUDE NOTE: Step 5: Draw! This is where the GPU actually runs the shaders.
+		// LINE_STRIP connects vertices in order: p0->p1->p2->p3
+		// The vertex shader runs 4 times (once per vertex) with 'pos' attribute auto-incrementing:
+		//   Run 1: pos = (x0, y0)  [reads floats 0-1 from buffer]
+		//   Run 2: pos = (x1, y1)  [reads floats 2-3 from buffer]
+		//   Run 3: pos = (x2, y2)  [reads floats 4-5 from buffer]
+		//   Run 4: pos = (x3, y3)  [reads floats 6-7 from buffer]
+		// Then fragment shader colors each pixel along the lines.
+		// Parameters: (primitive type, starting vertex, number of vertices)
 		gl.drawArrays( gl.LINE_STRIP, 0, 4 );
 	}
 }
 // CLAUDE NOTE: Shaders are programs that run on the GPU.
-// CLAUDE NOTE: Vertex shaders process each vertex, Fragment shaders color each pixel.
+// Vertex shaders process each vertex, Fragment shaders color each pixel.
 
 // Vertex shader source code
-// CLAUDE NOTE: The vertex shader runs once per vertex (in our case, per control point).
-// CLAUDE NOTE: Its job is to calculate the final position of the vertex in clip space.
+// CLAUDE NOTE: The vertex shader runs once per vertex (in our case, once per control point).
+// Its job is to calculate the final position of the vertex in clip space.
 var linesVS = `
-	attribute vec2 pos;      // CLAUDE NOTE: Input: 2D position from our vertex buffer (x,y)
-	uniform mat4 mvp;        // CLAUDE NOTE: Input: The projection matrix (same for all vertices)
+	attribute vec2 pos;      // Input: 2D position from our vertex buffer (x,y in pixels)
+	uniform mat4 mvp;        // Input: The projection matrix (same for all vertices)
 	void main()
 	{
 		// CLAUDE NOTE: Transform the 2D position to clip space coordinates.
-		// CLAUDE NOTE: vec4(pos,0,1) converts (x,y) to (x,y,0,1) - homogeneous coordinates
-		// CLAUDE NOTE: Then multiply by mvp matrix to get final position
-		// CLAUDE NOTE: gl_Position is a special output variable - where the vertex ends up
+		// vec4(pos,0,1) converts (x,y) to (x,y,0,1) - homogeneous coordinates
+		// Then multiply by mvp matrix to get final position
+		// CRITICAL: gl_Position MUST be in clip space (x,y,z,w all in range [-1,1] after w-divide)
+		// If we didn't multiply by mvp, the pixel coordinates would be way outside [-1,1]
+		// and nothing would be visible (everything would be clipped)!
 		gl_Position = mvp * vec4(pos,0,1);
 	}
 `;
 // Fragment shader source code
 // CLAUDE NOTE: The fragment shader runs once per pixel being drawn.
-// CLAUDE NOTE: Its job is to determine what color that pixel should be.
+// Its job is to determine what color that pixel should be.
 var linesFS = `
-	precision mediump float; // CLAUDE NOTE: Set precision for floating-point calculations
+	precision mediump float; // Set precision for floating-point calculations
 	void main()
 	{
 		// CLAUDE NOTE: Set the color for every pixel to blue.
-		// CLAUDE NOTE: gl_FragColor format is vec4(red, green, blue, alpha)
-		// CLAUDE NOTE: Each component ranges from 0.0 to 1.0
-		// CLAUDE NOTE: (0,0,1,1) = fully opaque blue
+		// gl_FragColor format is vec4(red, green, blue, alpha)
+		// Each component ranges from 0.0 to 1.0
+		// (0,0,1,1) = fully opaque blue
 		gl_FragColor = vec4(0,0,1,1);
 	}
 `;
@@ -144,17 +164,17 @@ var curveDrawer;
 
 // Called once to initialize
 // CLAUDE NOTE: This function is called when the page loads (see line 229).
-// CLAUDE NOTE: It sets up the WebGL context and creates our drawing objects.
+// It sets up the WebGL context and creates our drawing objects.
 function InitWebGL()
 {
 	// Initialize the WebGL canvas
-	// CLAUDE NOTE: Get the HTML canvas element where we'll draw
+	// Get the HTML canvas element where we'll draw
 	const canvas = document.getElementById("canvas");
-	// CLAUDE NOTE: Disable right-click context menu on the canvas
+	// Disable right-click context menu on the canvas
 	canvas.oncontextmenu = function() {return false;};
 	// CLAUDE NOTE: Get the WebGL rendering context from the canvas
-	// CLAUDE NOTE: antialias:false = no anti-aliasing (sharper but more jagged lines)
-	// CLAUDE NOTE: depth:false = no depth buffer (we're doing 2D, don't need it)
+	// antialias:false = no anti-aliasing (sharper but more jagged lines)
+	// depth:false = no depth buffer (we're doing 2D, don't need it)
 	gl = canvas.getContext("webgl", {antialias: false, depth: false});	// Initialize the GL context
 	if (!gl) {
 		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
@@ -162,56 +182,56 @@ function InitWebGL()
 	}
 
 	// Initialize settings
-	// CLAUDE NOTE: Set the background color (R, G, B, A) - white with 0 alpha
+	// Set the background color (R, G, B, A) - white with 0 alpha
 	gl.clearColor(1.0, 1.0, 1.0, 0.0);
-	// CLAUDE NOTE: Set the width of lines we draw (in pixels)
+	// Set the width of lines we draw (in pixels)
 	gl.lineWidth(1.0);
 
 	// Initialize the programs and buffers for drawing
-	// CLAUDE NOTE: Create instances of our drawer classes
-	// CLAUDE NOTE: This is where their constructor methods get called
+	// CLAUDE NOTE: Create instances of our drawer classes.
+	// This is where their constructor methods get called.
 	lineDrawer  = new LineDrawer();
 	curveDrawer = new CurveDrawer();
 
 	// Set the viewport size
-	// CLAUDE NOTE: Configure the viewport to match the canvas size
+	// Configure the viewport to match the canvas size
 	UpdateCanvasSize();
 }
 
 // Called every time the window size is changed.
 // CLAUDE NOTE: This function handles high-DPI displays (like Retina screens) properly.
-// CLAUDE NOTE: It ensures the canvas has the right number of pixels for crisp rendering.
+// It ensures the canvas has the right number of pixels for crisp rendering.
 function UpdateCanvasSize()
 {
 	const canvas = document.getElementById("canvas");
-	// CLAUDE NOTE: First, make the canvas fill its container
+	// First, make the canvas fill its container
 	canvas.style.width  = '100%';
 	canvas.style.height = '100%';
-	// CLAUDE NOTE: Get the device pixel ratio (2 for Retina displays, 1 for standard displays)
+	// Get the device pixel ratio (2 for Retina displays, 1 for standard displays)
 	const pixelRatio = window.devicePixelRatio || 1;
-	// CLAUDE NOTE: Set the actual pixel dimensions of the canvas buffer
-	// CLAUDE NOTE: clientWidth/Height is the CSS size, we multiply by pixelRatio for actual pixels
+	// CLAUDE NOTE: Set the actual pixel dimensions of the canvas buffer.
+	// clientWidth/Height is the CSS size, we multiply by pixelRatio for actual pixels
 	canvas.width  = pixelRatio * canvas.clientWidth;
 	canvas.height = pixelRatio * canvas.clientHeight;
-	// CLAUDE NOTE: Calculate the logical width and height (in CSS pixels, not device pixels)
+	// Calculate the logical width and height (in CSS pixels, not device pixels)
 	const width  = (canvas.width  / pixelRatio);
 	const height = (canvas.height / pixelRatio);
-	// CLAUDE NOTE: Set the CSS size to match
+	// Set the CSS size to match
 	canvas.style.width  = width  + 'px';
 	canvas.style.height = height + 'px';
-	// CLAUDE NOTE: Tell WebGL what portion of the canvas to render to
-	// CLAUDE NOTE: Parameters: (x, y, width, height) in pixels
+	// CLAUDE NOTE: Tell WebGL what portion of the canvas to render to.
+	// Parameters: (x, y, width, height) in pixels
 	gl.viewport( 0, 0, canvas.width, canvas.height );
 
 	// Update the projection matrices using the new viewport size
-	// CLAUDE NOTE: Tell our drawers about the new size so they can update their projection matrices
+	// Tell our drawers about the new size so they can update their projection matrices
 	lineDrawer.setViewport( width, height );
 	curveDrawer.setViewport( width, height );
 }
 
 // Called when the control points are modified
 // CLAUDE NOTE: This is called whenever the user drags a control point.
-// CLAUDE NOTE: It tells both drawers to update their vertex data.
+// It tells both drawers to update their vertex/uniform data.
 function UpdatePoints()
 {
 	// Update the control point data
@@ -219,42 +239,44 @@ function UpdatePoints()
 	curveDrawer.updatePoints(pt);
 }
 
-// This is the main function that handled WebGL drawing
+// This is the main function that handles WebGL drawing
 // CLAUDE NOTE: This function renders one frame.
-// CLAUDE NOTE: It's called after any change (dragging points, resizing window, etc.)
+// It's called after any change (dragging points, resizing window, etc.)
+// JavaScript adds these commands to a queue; the GPU processes them asynchronously in parallel.
+// The CPU doesn't wait - it can keep building the next frame while GPU renders this one!
 function DrawScene()
 {
 	// Clear the screen. There is no need to clear the depth buffer, since it does not exist.
-	// CLAUDE NOTE: Clear the canvas to the background color (white, set in InitWebGL)
-	// CLAUDE NOTE: COLOR_BUFFER_BIT clears color, DEPTH_BUFFER_BIT clears depth (unused here)
+	// CLAUDE NOTE: Clear the canvas to the background color (white, set in InitWebGL).
+	// COLOR_BUFFER_BIT clears color, DEPTH_BUFFER_BIT clears depth (unused here)
 	gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
 	// Draw the curve and then the line segments that connect the control points.
 	// CLAUDE NOTE: Draw order matters! We draw the curve first, then the lines on top.
-	// CLAUDE NOTE: This way the blue control lines are visible over the red curve.
+	// This way the blue control lines are visible over the red curve.
 	curveDrawer.draw();
 	lineDrawer.draw();
 }
 
 // This is a helper function for compiling the given vertex and fragment shader source code into a program.
 // CLAUDE NOTE: A shader "program" is a combination of a vertex shader and a fragment shader.
-// CLAUDE NOTE: Both shaders must be compiled and linked together to create a usable program.
+// Both shaders must be compiled and linked together to create a usable program.
 function InitShaderProgram( vsSource, fsSource )
 {
-	// CLAUDE NOTE: Compile both shaders from their source code strings
+	// Compile both shaders from their source code strings
 	const vs = CompileShader( gl.VERTEX_SHADER,   vsSource );
 	const fs = CompileShader( gl.FRAGMENT_SHADER, fsSource );
 
-	// CLAUDE NOTE: Create a shader program object
+	// Create a shader program object
 	const prog = gl.createProgram();
-	// CLAUDE NOTE: Attach both compiled shaders to the program
+	// Attach both compiled shaders to the program
 	gl.attachShader(prog, vs);
 	gl.attachShader(prog, fs);
-	// CLAUDE NOTE: Link the shaders together
-	// CLAUDE NOTE: This connects the vertex shader's outputs to the fragment shader's inputs
+	// CLAUDE NOTE: Link the shaders together.
+	// This connects the vertex shader's outputs to the fragment shader's inputs
 	gl.linkProgram(prog);
 
-	// CLAUDE NOTE: Check if linking was successful
+	// Check if linking was successful
 	if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
 		alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(prog));
 		return null;
@@ -266,13 +288,13 @@ function InitShaderProgram( vsSource, fsSource )
 // CLAUDE NOTE: This function takes shader source code (a string) and compiles it into GPU code.
 function CompileShader( type, source )
 {
-	// CLAUDE NOTE: Create a shader object of the specified type (VERTEX_SHADER or FRAGMENT_SHADER)
+	// Create a shader object of the specified type (VERTEX_SHADER or FRAGMENT_SHADER)
 	const shader = gl.createShader(type);
-	// CLAUDE NOTE: Load the source code into the shader object
+	// Load the source code into the shader object
 	gl.shaderSource(shader, source);
-	// CLAUDE NOTE: Compile the shader source code
+	// Compile the shader source code
 	gl.compileShader(shader);
-	// CLAUDE NOTE: Check if compilation was successful
+	// Check if compilation was successful
 	if (!gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) {
 		alert('An error occurred compiling shader:\n' + gl.getShaderInfoLog(shader));
 		gl.deleteShader(shader);
@@ -290,12 +312,12 @@ function CompileShader( type, source )
 ///////////////////////////////////////////////////////////////////////////////////
 // CLAUDE NOTE: selPt tracks which control point is currently being dragged (null if none)
 var selPt = null;
-// CLAUDE NOTE: pt is an array that holds references to the 4 SVG circle elements (control points)
+// pt is an array that holds references to the 4 SVG circle elements (control points)
 var pt = new Array(4);
-// CLAUDE NOTE: $(document).ready() runs when the page finishes loading
-// CLAUDE NOTE: This is where we set up all our event handlers and initialize everything
+// CLAUDE NOTE: $(document).ready() runs when the page finishes loading.
+// This is where we set up all our event handlers and initialize everything
 $(document).ready(function() {
-	// CLAUDE NOTE: Get the window dimensions
+	// Get the window dimensions
 	var w = document.documentElement.clientWidth;
 	var h = document.documentElement.clientHeight;
 	// CLAUDE NOTE: Get references to the 4 SVG circle elements (defined in the HTML at lines 312-315)
@@ -303,8 +325,8 @@ $(document).ready(function() {
 	pt[1] = document.getElementById("p1");
 	pt[2] = document.getElementById("p2");
 	pt[3] = document.getElementById("p3");
-	// CLAUDE NOTE: Set initial positions for the control points as percentages of window size
-	// CLAUDE NOTE: This creates a nice-looking curve when the app first loads
+	// CLAUDE NOTE: Set initial positions for the control points as percentages of window size.
+	// This creates a nice-looking curve when the app first loads
 	pt[0].setAttribute("cx", .1*w);   // Point 0: 10% from left
 	pt[0].setAttribute("cy", .4*h);   // Point 0: 40% from top
 	pt[1].setAttribute("cx", .4*w);   // Point 1: 40% from left
@@ -315,79 +337,79 @@ $(document).ready(function() {
 	pt[3].setAttribute("cy", .6*h);   // Point 3: 60% from top
 
 	// CLAUDE NOTE: Set up event handlers for mouse interaction
-	// CLAUDE NOTE: When user clicks on any circle, start dragging it
+	// When user clicks on any circle, start dragging it
 	$("circle").on( "mousedown", function( event ) {
 		if ( ! selPt ) selPt = event.target;  // Store which circle was clicked
 	});
-	// CLAUDE NOTE: When user releases mouse button, stop dragging
+	// When user releases mouse button, stop dragging
 	$("circle").on( "mouseup", function( event ) {
 		selPt = null;  // Clear the selected point
 	});
-	// CLAUDE NOTE: If mouse leaves the window, stop dragging
+	// If mouse leaves the window, stop dragging
 	$(document).on( "mouseleave", function( event ) {
 		selPt = null;
 	});
 	// CLAUDE NOTE: When mouse moves, update the dragged point's position
 	$(document).on( "mousemove", function( event ) {
 		if ( selPt ) {  // Only if we're currently dragging a point
-			// CLAUDE NOTE: Update the circle's position to follow the mouse
+			// Update the circle's position to follow the mouse
 			selPt.setAttribute("cx", event.clientX);
 			selPt.setAttribute("cy", event.clientY);
-			// CLAUDE NOTE: Update the SVG dotted lines/curve overlay
+			// Update the SVG dotted lines/curve overlay
 			UpdateLines();
-			// CLAUDE NOTE: Update the WebGL vertex buffers with new positions
+			// Update the WebGL vertex buffers with new positions
 			UpdatePoints();
-			// CLAUDE NOTE: Redraw the WebGL scene
+			// Redraw the WebGL scene
 			DrawScene();
 		}
 	});
-	// CLAUDE NOTE: When window is resized, update canvas size and redraw
+	// When window is resized, update canvas size and redraw
 	$(window).on( "resize", function( event ) {
 		UpdateCanvasSize();
 		DrawScene();
 	});
 
 	// CLAUDE NOTE: Initial setup sequence when page loads:
-	UpdateLines();     // CLAUDE NOTE: Draw the initial SVG dotted overlay
-	InitWebGL();       // CLAUDE NOTE: Initialize WebGL context and create drawer objects
-	UpdatePoints();    // CLAUDE NOTE: Send initial control point positions to GPU
-	DrawScene();       // CLAUDE NOTE: Draw the initial frame
+	UpdateLines();     // Draw the initial SVG dotted overlay
+	InitWebGL();       // Initialize WebGL context and create drawer objects
+	UpdatePoints();    // Send initial control point positions to GPU
+	DrawScene();       // Draw the initial frame
 });
-// CLAUDE NOTE: This function updates the SVG dotted overlay (the green curve and black lines)
-// CLAUDE NOTE: The SVG overlay shows where your WebGL drawings should appear - like a guide
+// CLAUDE NOTE: This function updates the SVG dotted overlay (the green curve and black lines).
+// The SVG overlay shows where your WebGL drawings should appear - like a guide!
 function UpdateLines()
 {
-	// CLAUDE NOTE: Get references to the 3 SVG line elements (connect points 0->1, 1->2, 2->3)
+	// Get references to the 3 SVG line elements (connect points 0->1, 1->2, 2->3)
 	var line = new Array(3);
 	line[0] = document.getElementById("line0");
 	line[1] = document.getElementById("line1");
 	line[2] = document.getElementById("line2");
-	// CLAUDE NOTE: Start at the first control point
+	// Start at the first control point
 	var x1 = pt[0].getAttribute("cx");
 	var y1 = pt[0].getAttribute("cy");
-	// CLAUDE NOTE: Build an SVG path string for the Bezier curve
-	// CLAUDE NOTE: "M" = MoveTo command (starting point)
-	// CLAUDE NOTE: "C" = CubicBezierTo command (will be followed by 3 control points)
+	// CLAUDE NOTE: Build an SVG path string for the Bezier curve.
+	// "M" = MoveTo command (starting point)
+	// "C" = CubicBezierTo command (will be followed by 3 control points)
 	var d = "M" + x1 + "," + y1 + " C";
-	// CLAUDE NOTE: Loop through the 3 line segments
+	// Loop through the 3 line segments
 	for ( var i=0; i<3; ++i ) {
-		// CLAUDE NOTE: Get the next control point
+		// Get the next control point
 		var x2 = pt[i+1].getAttribute("cx");
 		var y2 = pt[i+1].getAttribute("cy");
-		// CLAUDE NOTE: Update the SVG line element to connect current point to next point
+		// Update the SVG line element to connect current point to next point
 		line[i].setAttribute("x1", x1);
 		line[i].setAttribute("y1", y1);
 		line[i].setAttribute("x2", x2);
 		line[i].setAttribute("y2", y2);
-		// CLAUDE NOTE: Add this control point to the curve path string
+		// Add this control point to the curve path string
 		d += x2 + "," + y2 + " ";
-		// CLAUDE NOTE: Move to the next segment
+		// Move to the next segment
 		x1 = x2;
 		y1 = y2;
 	}
-	// CLAUDE NOTE: Get the SVG path element for the curve and update its "d" (data) attribute
-	// CLAUDE NOTE: The curve is drawn automatically by the browser using the cubic Bezier formula
-	// CLAUDE NOTE: Your job is to implement this same curve in WebGL!
+	// CLAUDE NOTE: Get the SVG path element for the curve and update its "d" (data) attribute.
+	// The curve is drawn automatically by the browser using the cubic Bezier formula.
+	// Your job is to implement this same curve in WebGL!
 	var c = document.getElementById("curve");
 	c.setAttribute("d",d);
 }
