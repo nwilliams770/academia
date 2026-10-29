@@ -1,0 +1,617 @@
+<!-- Copyright 2020, Cem Yuksel, University of Utah -->
+<html>
+<head>
+<title>CS 4600 - Project 4</title>
+<script type="text/javascript" id="includedscript" src="project4.js"></script>
+<script type="text/javascript" src="obj.js"></script>
+<!-- ==== EXTRA CREDIT: F1 UI Panel — BEGIN ==== -->
+<script type="text/javascript" src="extracredit.js"></script>
+<!-- ==== EXTRA CREDIT: F1 UI Panel — END ==== -->
+
+<script type="text/javascript">
+///////////////////////////////////////////////////////////////////////////////////
+// Below is the code for the object that draws lines.
+///////////////////////////////////////////////////////////////////////////////////
+class BoxDrawer {
+	constructor()
+	{
+		// Compile the shader program
+		this.prog = InitShaderProgram( boxVS, boxFS );
+		
+		// Get the ids of the uniform variables in the shaders
+		this.mvp = gl.getUniformLocation( this.prog, 'mvp' );
+		
+		// Get the ids of the vertex attributes in the shaders
+		this.vertPos = gl.getAttribLocation( this.prog, 'pos' );
+		
+		// Create the buffer objects
+		
+		this.vertbuffer = gl.createBuffer();
+		var pos = [
+			-1, -1, -1,
+			-1, -1,  1,
+			-1,  1, -1,
+			-1,  1,  1,
+			 1, -1, -1,
+			 1, -1,  1,
+			 1,  1, -1,
+			 1,  1,  1 ];
+		gl.bindBuffer(gl.ARRAY_BUFFER, this.vertbuffer);
+		gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(pos), gl.STATIC_DRAW);
+
+		this.linebuffer = gl.createBuffer();
+		var line = [
+			0,1,   1,3,   3,2,   2,0,
+			4,5,   5,7,   7,6,   6,4,
+			0,4,   1,5,   3,7,   2,6 ];
+		gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.linebuffer);
+		gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint8Array(line), gl.STATIC_DRAW);
+	}
+	draw( trans )
+	{
+		// Draw the line segments
+		gl.useProgram( this.prog );
+		gl.uniformMatrix4fv( this.mvp, false, trans );
+		gl.bindBuffer( gl.ARRAY_BUFFER, this.vertbuffer );
+		gl.vertexAttribPointer( this.vertPos, 3, gl.FLOAT, false, 0, 0 );
+		gl.enableVertexAttribArray( this.vertPos );
+		gl.bindBuffer( gl.ELEMENT_ARRAY_BUFFER, this.linebuffer );
+		gl.drawElements( gl.LINES, 24, gl.UNSIGNED_BYTE, 0 );
+	}
+}
+// Vertex shader source code
+// ==== EXTRA CREDIT: WEBGL2 MIGRATION — BEGIN ====
+var boxVS = `#version 300 es
+in vec3 pos;
+uniform mat4 mvp;
+void main()
+{
+	gl_Position = mvp * vec4(pos,1);
+}
+`;
+// Fragment shader source code
+var boxFS = `#version 300 es
+precision mediump float;
+out vec4 fragColor;
+void main()
+{
+	fragColor = vec4(1,1,1,1);
+}
+`;
+// Original GLSL 1.00 ES versions (WebGL1), preserved for diffing:
+// // Vertex shader source code
+// var boxVS = `
+// 	attribute vec3 pos;
+// 	uniform mat4 mvp;
+// 	void main()
+// 	{
+// 		gl_Position = mvp * vec4(pos,1);
+// 	}
+// `;
+// // Fragment shader source code
+// var boxFS = `
+// 	precision mediump float;
+// 	void main()
+// 	{
+// 		gl_FragColor = vec4(1,1,1,1);
+// 	}
+// `;
+// ==== EXTRA CREDIT: WEBGL2 MIGRATION — END ====
+///////////////////////////////////////////////////////////////////////////////////
+</script>
+
+<script type="text/javascript">
+///////////////////////////////////////////////////////////////////////////////////
+// Below is the core WebGL initialization code.
+///////////////////////////////////////////////////////////////////////////////////
+var boxDrawer;
+var meshDrawer;
+var canvas, gl;
+var perspectiveMatrix;	// perspective projection matrix
+var rotX=0, rotY=0, transZ=3, autorot=0;
+
+// Called once to initialize
+function InitWebGL()
+{
+	// Initialize the WebGL canvas
+	canvas = document.getElementById("canvas");
+	canvas.oncontextmenu = function() {return false;};
+	// ==== EXTRA CREDIT: WEBGL2 MIGRATION — BEGIN ====
+	// Try WebGL2 first for derivative functions (dFdx/dFdy), textureLod, textureGrad,
+	// textureSize, and NPOT mipmaps without extensions. Fall back to WebGL1 if unavailable.
+	gl = canvas.getContext("webgl2", {antialias: false, depth: true});
+	if (gl) {
+		window.EC_IS_WEBGL2 = true;
+		console.log("WebGL2 context created successfully.");
+	} else {
+		gl = canvas.getContext("webgl", {antialias: false, depth: true});
+		window.EC_IS_WEBGL2 = false;
+		if (gl) {
+			console.log("WebGL2 unavailable, using WebGL1 context. Some extra credit features will be disabled.");
+		}
+	}
+	// ==== EXTRA CREDIT: WEBGL2 MIGRATION — END ====
+	if (!gl) {
+		alert("Unable to initialize WebGL. Your browser or machine may not support it.");
+		return;
+	}
+	
+	// Initialize settings
+	gl.clearColor(0,0,0,0);
+	gl.enable(gl.DEPTH_TEST);
+	
+	// Initialize the programs and buffers for drawing
+	boxDrawer  = new BoxDrawer();
+	meshDrawer = new MeshDrawer();
+	
+	// Set the viewport size
+	UpdateCanvasSize();
+}
+
+// Called every time the window size is changed.
+function UpdateCanvasSize()
+{
+	// ==== EXTRA CREDIT: ROBUSTNESS — BEGIN ====
+	// Guard against resize events firing before window.onload completes.
+	// canvas and gl are assigned in InitWebGL(), which runs in onload. Early
+	// resize events (rare but possible) would crash without this check.
+	if (!canvas || !gl) return;
+	// ==== EXTRA CREDIT: ROBUSTNESS — END ====
+	canvas.style.width  = "100%";
+	canvas.style.height = "100%";
+	const pixelRatio = window.devicePixelRatio || 1;
+	canvas.width  = pixelRatio * canvas.clientWidth;
+	canvas.height = pixelRatio * canvas.clientHeight;
+	const width  = (canvas.width  / pixelRatio);
+	const height = (canvas.height / pixelRatio);
+	canvas.style.width  = width  + 'px';
+	canvas.style.height = height + 'px';
+	gl.viewport( 0, 0, canvas.width, canvas.height );
+	UpdateProjectionMatrix();
+}
+
+function UpdateProjectionMatrix()
+{
+	var r = canvas.width / canvas.height;
+	var n = (transZ - 1.74);
+	const min_n = 0.001;
+	if ( n < min_n ) n = min_n;
+	var f = (transZ + 1.74);
+	// ==== EXTRA CREDIT: F3 Ground Plane — BEGIN ====
+	// AMENDMENT 2: Extend the far plane when the ground plane is visible.
+	//
+	// WHY: The stock far plane (f = transZ + 1.74) creates a ~3.48-unit-deep frustum sized
+	// for the unit mesh (which fits in a [-1,+1] box). The ground plane extends to ±50 units
+	// to produce grazing angles and a visible horizon. Without extending f, the far plane
+	// would clip almost the entire ground plane, breaking the feature.
+	//
+	// TRADEOFF: Depth buffer precision is proportional to n:f ratio. With a 24-bit depth buffer
+	// (typical), n=0.001 and f=200 gives precision ~0.008 units at the far plane, vs. ~0.00001
+	// with the stock f=3.5. This can cause Z-fighting (flickering) on overlapping surfaces at
+	// depth, but the ground plane is a single non-overlapping quad, so it's not a problem here.
+	// The mesh remains in the near range (high precision). If you added many distant objects,
+	// you'd want to increase n instead, sacrificing near-plane placement.
+	//
+	// CHOICE: f=200 is large enough for the ground plane (±50 units) to recede to a horizon
+	// even at steep viewing angles, but not so large that depth precision degrades noticeably.
+	// Verified visually: with the ground plane on and the view tilted toward grazing, the plane
+	// recedes smoothly to a horizon line without hard clipping or flickering.
+	if (typeof EC !== 'undefined' && EC.enabled && EC.groundPlane) {
+		f = transZ + 200.0;
+	}
+	// ==== EXTRA CREDIT: F3 Ground Plane — END ====
+	var fov = 3.145 * 60 / 180;
+	var s = 1 / Math.tan( fov/2 );
+	perspectiveMatrix = [
+		s/r, 0, 0, 0,
+		0, s, 0, 0,
+		0, 0, (n+f)/(f-n), 1,
+		0, 0, -2*n*f/(f-n), 0
+	];
+	// ==== EXTRA CREDIT: F5 Orthographic Projection Toggle — BEGIN ====
+	// Replace the perspective matrix with an orthographic projection when EC.projection === 'ortho'.
+	// Uses the same n, f, and r (aspect ratio) computed above, so the ortho and perspective views
+	// clip the same depth range and respect the same aspect ratio (apples-to-apples comparison).
+	//
+	// PEDAGOGICAL PURPOSE: Switching to ortho removes perspective foreshortening, making depth
+	// irrelevant to texture LOD computation. Only the viewing angle affects the footprint size.
+	// Watch mip-level banding (if you implement F4 case 2) flatten out under ortho, and notice
+	// how the ground plane no longer has distance-based blur (all depths sample the same LOD at
+	// a given angle). This isolates the effect of perspective divide on texture filtering.
+	if (typeof EC !== 'undefined' && EC.enabled && EC.projection === 'ortho') {
+		perspectiveMatrix = EC.ecOrthographicMatrix(r, n, f);
+	}
+	// ==== EXTRA CREDIT: F5 Orthographic Projection Toggle — END ====
+}
+
+// This is the main function that handled WebGL drawing
+function DrawScene()
+{
+	var mvp = GetModelViewProjection( perspectiveMatrix, 0, 0, transZ, rotX, autorot+rotY );
+
+	// Clear the screen and the depth buffer.
+	gl.clear( gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT );
+
+	// Draw the curve and then the line segments that connect the control points.
+	meshDrawer.draw( mvp );
+	if ( showBox.checked ) {
+		boxDrawer.draw( mvp );
+	}
+	// ==== EXTRA CREDIT: F3 Ground Plane — BEGIN ====
+	// Draw the ground plane using the same MVP matrix as the mesh and box, so it responds
+	// to the same rotation/zoom controls. The plane is drawn AFTER the mesh so depth testing
+	// ensures the mesh appears in front (assuming the mesh is above Y=0).
+	if (typeof EC !== 'undefined' && EC.enabled && EC.groundPlane && EC.groundPlaneObj) {
+		EC.groundPlaneObj.draw(mvp);
+	}
+	// ==== EXTRA CREDIT: F3 Ground Plane — END ====
+}
+
+// This is a helper function for compiling the given vertex and fragment shader source code into a program.
+function InitShaderProgram( vsSource, fsSource )
+{
+	const vs = CompileShader( gl.VERTEX_SHADER,   vsSource );
+	const fs = CompileShader( gl.FRAGMENT_SHADER, fsSource );
+
+	const prog = gl.createProgram();
+	gl.attachShader(prog, vs);
+	gl.attachShader(prog, fs);
+	gl.linkProgram(prog);
+
+	if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+		alert('Unable to initialize the shader program: ' + gl.getProgramInfoLog(prog));
+		return null;
+	}
+	return prog;
+}
+
+// This is a helper function for compiling a shader, called by InitShaderProgram().
+function CompileShader( type, source )
+{
+	const shader = gl.createShader(type);
+	gl.shaderSource(shader, source);
+	gl.compileShader(shader);
+	if (!gl.getShaderParameter( shader, gl.COMPILE_STATUS) ) {
+		// ==== EXTRA CREDIT: WEBGL2 MIGRATION — BEGIN ====
+		// Enhanced error logging: type, full log, and numbered source lines.
+		// Common symptom when migrating: writing GLSL 1.00 (attribute/varying/gl_FragColor)
+		// in a WebGL2 context causes "undeclared identifier" errors because those keywords
+		// don't exist in GLSL 300 es. The version directive MUST be the literal first line.
+		const typeName = (type === gl.VERTEX_SHADER) ? "VERTEX" : "FRAGMENT";
+		const log = gl.getShaderInfoLog(shader);
+		const lines = source.split('\n');
+		const numberedSource = lines.map((line, idx) => `${(idx + 1).toString().padStart(4)}: ${line}`).join('\n');
+		const errorMsg = `${typeName} SHADER COMPILE ERROR:\n\n${log}\n\nSource:\n${numberedSource}`;
+		console.error(errorMsg);
+		alert('An error occurred compiling shader:\n' + log + '\n\n(See console for full source listing)');
+		// ==== EXTRA CREDIT: WEBGL2 MIGRATION — END ====
+		gl.deleteShader(shader);
+		return null;
+	}
+	return shader;
+}
+
+// Multiplies two matrices and returns the result A*B.
+// The arguments A and B are arrays, representing column-major matrices.
+function MatrixMult( A, B )
+{
+	var C = [];
+	for ( var i=0; i<4; ++i ) {
+		for ( var j=0; j<4; ++j ) {
+			var v = 0;
+			for ( var k=0; k<4; ++k ) {
+				v += A[j+4*k] * B[k+4*i];
+			}
+			C.push(v);
+		}
+	}
+	return C;
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+</script>
+
+<script type="text/javascript">
+///////////////////////////////////////////////////////////////////////////////////
+// Below are the main UI control and SVG update functions.
+///////////////////////////////////////////////////////////////////////////////////
+
+var showBox;
+
+window.onload = function() {
+	showBox = document.getElementById('show-box');
+	InitWebGL();
+	canvas.zoom = function( s ) {
+		transZ *= s/canvas.height + 1;
+		UpdateProjectionMatrix();
+		DrawScene();
+	}
+	canvas.onwheel = function() { canvas.zoom(0.3*event.deltaY); }
+	canvas.onmousedown = function() {
+		var cx = event.clientX;
+		var cy = event.clientY;
+		if ( event.ctrlKey ) {
+			canvas.onmousemove = function() {
+				canvas.zoom(5*(event.clientY - cy));
+				cy = event.clientY;
+			}
+		} else {
+			canvas.onmousemove = function() {
+				rotY += (cx - event.clientX)/canvas.width*5;
+				rotX += (cy - event.clientY)/canvas.height*5;
+				cx = event.clientX;
+				cy = event.clientY;
+				UpdateProjectionMatrix();
+				DrawScene();
+			}
+		}
+	}
+	canvas.onmouseup = canvas.onmouseleave = function() {
+		canvas.onmousemove = null;
+	}
+	
+	DrawScene();
+};
+function WindowResize()
+{
+	UpdateCanvasSize();
+	DrawScene();
+}
+
+var timer;
+function AutoRotate( param )
+{
+	if ( param.checked ) {
+		timer = setInterval( function() {
+				var v = document.getElementById('rotation-speed').value;
+				autorot += 0.0005 * v;
+				if ( autorot > 2*Math.PI ) autorot -= 2*Math.PI;
+				DrawScene();
+			}, 30
+		);
+		document.getElementById('rotation-speed').disabled = false;
+	} else {
+		clearInterval( timer );
+		document.getElementById('rotation-speed').disabled = true;
+	}
+}
+
+function ShowTexture( param )
+{
+	meshDrawer.showTexture( param.checked );
+	DrawScene();
+}
+
+function SwapYZ( param )
+{
+	meshDrawer.swapYZ( param.checked );
+	DrawScene();
+}
+
+function LoadObj( param )
+{
+	if ( param.files && param.files[0] ) {
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			var mesh = new ObjMesh;
+			mesh.parse( e.target.result );
+			var box = mesh.getBoundingBox();
+			var shift = [
+				-(box.min[0]+box.max[0])/2,
+				-(box.min[1]+box.max[1])/2,
+				-(box.min[2]+box.max[2])/2
+			];
+			var size = [
+				(box.max[0]-box.min[0])/2,
+				(box.max[1]-box.min[1])/2,
+				(box.max[2]-box.min[2])/2
+			];
+			var maxSize = Math.max( size[0], size[1], size[2] );
+			var scale = 1/maxSize;
+			mesh.shiftAndScale( shift, scale );
+			var buffers = mesh.getVertexBuffers();
+			meshDrawer.setMesh( buffers.positionBuffer, buffers.texCoordBuffer );
+			DrawScene();
+		}
+		reader.readAsText( param.files[0] );
+	}
+}
+
+function LoadTexture( param )
+{
+	if ( param.files && param.files[0] ) {
+		var reader = new FileReader();
+		reader.onload = function(e) {
+			var img = document.getElementById('texture-img');
+			img.onload = function() {
+				meshDrawer.setTexture( img );
+				DrawScene();
+			}
+			img.src = e.target.result;
+		};
+		reader.readAsDataURL( param.files[0] );
+	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////
+</script>
+
+<style>
+html {
+	color: white;
+	background-color: black;
+	font-family: Arial;
+	overflow: hidden;
+}
+body {
+	padding: 0;
+	margin: 0;
+}
+input[type=checkbox], label {
+	cursor: hand;
+}
+input[type=range] {
+	width: 100%;
+}
+canvas {
+	display: block;
+	position: absolute;
+	top:  0;
+	left: 0;
+	width:  100%;
+	height: 100%;
+}
+#canvas-div {
+	position: relative;
+}
+#controls-div {
+	vertical-align: top;
+	background-color: #333;
+	overflow: auto;
+}
+#controls {
+	padding: 1em;
+}
+.control {
+	padding: 0.2em;
+}
+@media (orientation: landscape) {
+	#canvas-div {
+		display: inline-block;
+		width:   80%;
+		height: 100%;
+	}
+	#controls-div {
+		display: inline-block;
+		width:   20%;
+		height: 100%;
+	}
+	.control-group {
+		margin-top: 1em;
+		overflow: hidden;
+	}
+	#texture-img {
+		width: 100%;
+		height: auto;
+	}
+}
+@media (orientation: portrait) {
+	#canvas-div {
+		width:  100%;
+		height:  80%;
+	}
+	#controls-div {
+		width:  100%;
+		height:  20%;
+	}
+	.control-group {
+		display: inline-block;
+		vertical-align: top;
+		margin-left: 2em;
+	}
+	#texture-img {
+		width: auto;
+		height: calc( 100% - 2em );
+	}
+}
+</style>
+
+</head>
+<body onresize="WindowResize()">
+<div id="canvas-div"><canvas id="canvas"></canvas></div><div id="controls-div">
+<div id="controls">
+<div class="control-group">
+<div class="control"><input id="show-box" name="show-box" type="checkbox" onchange="DrawScene()" checked /><label for="show-box"> Show Box</label></div>
+<div class="control"><input id="show-texture" name="show-texture" type="checkbox" onchange="ShowTexture(this)" checked /><label for="show-texture"> Show Texture</label></div>
+<div class="control"><input id="swap-yz" name="swap-yz" type="checkbox" onchange="SwapYZ(this)" /><label for="swap-yz"> Swap Y-Z Axes</label></div>
+<div class="control"><input id="auto-rotate" name="auto-rotate" type="checkbox" onchange="AutoRotate(this)"/><label for="auto-rotate"> Auto Rotation</label></div>
+<div class="control"><input id="rotation-speed" type="range" min="1" max="100" value="50" disabled/></div>
+</div>
+<div class="control-group">
+<div class="control">OBJ model:<br/><input id="obj" type="file" onchange="LoadObj(this)" accept=".obj"/></div>
+<div class="control">Texture image:<br/><input id="texture" type="file" onchange="LoadTexture(this)" accept="image/*"/></div>
+</div>
+<div class="control-group">
+<img id="texture-img" />
+</div>
+<!-- ==== EXTRA CREDIT: F1 UI Panel — BEGIN ==== -->
+<div class="control-group" id="ec-panel">
+<details id="ec-details">
+<summary style="cursor: pointer; font-weight: bold; padding: 0.5em; background-color: #444; border-radius: 3px;">Extra Credit / Chapter 11 Explorer</summary>
+<div style="margin-top: 0.5em; padding: 0.5em; border-left: 3px solid #666;">
+<div class="control">
+<input id="ec-enable" type="checkbox" onchange="EC.onEnableChange(this)" />
+<label for="ec-enable"> Enable Extra Credit Features</label>
+</div>
+
+<!-- F3: Ground Plane (implemented in Batch D) -->
+<div class="control">
+<input id="ec-ground-plane" type="checkbox" onchange="EC.onGroundPlaneChange(this)" disabled />
+<label for="ec-ground-plane"> Ground Plane</label>
+</div>
+<div class="control" id="ec-ground-tiling-control" style="display: none;">
+<label for="ec-ground-tiling">Tiling: <span id="ec-ground-tiling-value">20</span></label>
+<input id="ec-ground-tiling" type="range" min="1" max="50" value="20" step="1" onchange="EC.onGroundTilingChange(this)" disabled />
+</div>
+
+<!-- F2: Filter Modes -->
+<div class="control" style="margin-top: 1em;">
+<label for="ec-filter-mode">Texture Filter:</label>
+<select id="ec-filter-mode" onchange="EC.onFilterModeChange(this)" disabled>
+<option value="spec" selected>Spec Default</option>
+<option value="nearest">Nearest (point)</option>
+<option value="bilinear">Bilinear</option>
+<option value="trilinear">Trilinear (mipmap)</option>
+<option id="ec-filter-aniso-option" value="aniso">Anisotropic</option>
+</select>
+</div>
+<div class="control" id="ec-aniso-control">
+<label for="ec-aniso-level">Anisotropy: <span id="ec-aniso-value">1</span>x <span id="ec-aniso-max" style="color: #888;">(max: ?)</span></label>
+<input id="ec-aniso-level" type="range" min="1" max="16" value="1" step="1" onchange="EC.onAnisoLevelChange(this)" disabled />
+</div>
+
+<!-- F5: Projection Mode (implemented in Batch E) -->
+<div class="control" style="margin-top: 1em;">
+<label for="ec-projection">Projection:</label>
+<select id="ec-projection" onchange="EC.onProjectionChange(this)" disabled>
+<option value="perspective" selected>Perspective</option>
+<option value="ortho">Orthographic</option>
+</select>
+</div>
+
+<!-- F4: Debug Views (implemented in Batch D for ground plane, Batch E for mesh) -->
+<div class="control" style="margin-top: 1em;">
+<label for="ec-debug-view">Debug View:</label>
+<select id="ec-debug-view" onchange="EC.onDebugViewChange(this)" disabled title="Works on ground plane now; mesh support in Batch E">
+<option value="off" selected>Off (normal)</option>
+<option value="uv">UV Coordinates (implemented)</option>
+<option value="miplevel">Mip Level (stub)</option>
+<option value="anisoratio">Anisotropy Ratio (stub)</option>
+<option value="texelgrid">Texel Grid (stub)</option>
+</select>
+</div>
+
+<!-- F6: Mip Bias (implemented in Batch F) -->
+<div class="control" style="margin-top: 1em;">
+<label for="ec-mip-bias">Mip Bias: <span id="ec-mip-bias-value">0.0</span></label>
+<input id="ec-mip-bias" type="range" min="-4" max="4" value="0" step="0.1" onchange="EC.onMipBiasChange(this)" disabled />
+</div>
+
+<!-- F7: Manual Anisotropic Filtering (implemented in Batch F) -->
+<div class="control" style="margin-top: 1em;">
+<input id="ec-manual-aniso" type="checkbox" onchange="EC.onManualAnisoChange(this)" disabled />
+<label for="ec-manual-aniso"> Manual Anisotropic (hand-rolled)</label>
+</div>
+<div class="control" id="ec-manual-aniso-samples-control" style="display: none;">
+<label for="ec-manual-aniso-samples">Samples: <span id="ec-manual-aniso-samples-value">8</span></label>
+<input id="ec-manual-aniso-samples" type="range" min="1" max="16" value="8" step="1" onchange="EC.onManualAnisoSamplesChange(this)" disabled />
+</div>
+
+</div>
+</details>
+</div>
+<!-- ==== EXTRA CREDIT: F1 UI Panel — END ==== -->
+</div>
+</div>
+</body>
+</html>

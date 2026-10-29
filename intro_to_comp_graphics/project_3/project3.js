@@ -18,7 +18,7 @@ class CurveDrawer {
     this.p3 = gl.getUniformLocation( this.prog, 'p3' );
 
 		// Initialize the attribute buffer
-		this.steps = 100;
+		this.steps = 1000;
 		var tv = [];
 		for ( var i=0; i<this.steps; ++i ) {
 			tv.push( i / (this.steps-1) );
