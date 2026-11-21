@@ -60,10 +60,83 @@ out vec4 fragColor;
 uniform sampler2D textureSampler;
 uniform bool showTex;
 
+// ==== EXTRA CREDIT: Snippets 1-3 — Uniforms — BEGIN ====
+uniform int uEcDebugView;           // F4: Which debug visualization mode (0=off, 1=uv, 2=miplevel, etc.)
+uniform vec2 uEcTexSize;            // F4: Texture dimensions in texels (e.g., vec2(512.0, 512.0))
+uniform float uEcMipBias;           // F6: Manual LOD bias (-4.0 to +4.0)
+uniform int uEcManualAniso;         // F7: Enable hand-rolled aniso filtering (0 or 1)
+uniform int uEcManualAnisoSamples;  // F7: Sample count (1-16)
+// ==== EXTRA CREDIT: Snippets 1-3 — Uniforms — END ====
+
+// ==== EXTRA CREDIT: Snippet 4 — Helper Function — BEGIN ====
+// Maps a scalar value t in [0,1] to a blue → green → red color gradient.
+// Used by debug views to visualize numbers (LOD, anisotropy ratio) as colors.
+vec3 ecColorRamp(float t) {
+	t = clamp(t, 0.0, 1.0);
+	vec3 blue = vec3(0.0, 0.0, 1.0);
+	vec3 green = vec3(0.0, 1.0, 0.0);
+	vec3 red = vec3(1.0, 0.0, 0.0);
+	if (t < 0.5) {
+		return mix(blue, green, t * 2.0);
+	} else {
+		return mix(green, red, (t - 0.5) * 2.0);
+	}
+}
+// ==== EXTRA CREDIT: Snippet 4 — Helper Function — END ====
+
+// ==== EXTRA CREDIT: Snippet 5a — F7 Manual Anisotropic Filtering (STUB) — BEGIN ====
+vec4 ecManualAnisoSample(sampler2D tex, vec2 uv) {
+    // TODO (student): implement me.
+    return texture(tex, uv);   // placeholder passthrough
+}
+// ==== EXTRA CREDIT: Snippet 5a — F7 Manual Anisotropic Filtering (STUB) — END ====
+
 void main()
 {
+  // ==== EXTRA CREDIT: Snippet 5b — Debug View Switch — BEGIN ====
+  // F4: Debug view switch
+  if (uEcDebugView == 1) {
+    // CASE 1: UV Visualization (FULLY IMPLEMENTED)
+    fragColor = vec4(fract(vTexCoord), 0.0, 1.0);
+    return;
+  }
+
+  if (uEcDebugView == 2) {
+    // CASE 2: Mip Level Visualization (STUB)
+    // TODO (student): Compute the LOD and output a color based on it.
+    fragColor = vec4(1.0, 0.0, 1.0, 1.0); // Placeholder: magenta
+    return;
+  }
+
+  if (uEcDebugView == 3) {
+    // CASE 3: Anisotropy Ratio Visualization (STUB)
+    // TODO (student): Compute the ratio and output a color encoding it.
+    fragColor = vec4(1.0, 1.0, 0.0, 1.0); // Placeholder: yellow
+    return;
+  }
+
+  if (uEcDebugView == 4) {
+    // CASE 4: Texel Grid Overlay (STUB)
+    // TODO (student): Generate grid lines and blend them onto the texture color.
+    fragColor = vec4(0.0, 1.0, 1.0, 1.0); // Placeholder: cyan
+    return;
+  }
+  // ==== EXTRA CREDIT: Snippet 5b — Debug View Switch — END ====
+
+  // Normal rendering path (when uEcDebugView == 0)
   if (showTex) {
-    fragColor = texture(textureSampler, vTexCoord);
+    // ==== EXTRA CREDIT: F6/F7 Integration — BEGIN ====
+    // Support mip bias and manual anisotropic filtering
+    vec4 texColor;
+    if (uEcManualAniso != 0) {
+      texColor = ecManualAnisoSample(textureSampler, vTexCoord);
+    } else if (abs(uEcMipBias) > 0.001) {
+      texColor = texture(textureSampler, vTexCoord, uEcMipBias);
+    } else {
+      texColor = texture(textureSampler, vTexCoord);
+    }
+    fragColor = texColor;
+    // ==== EXTRA CREDIT: F6/F7 Integration — END ====
   } else {
     fragColor = vec4(1,gl_FragCoord.z*gl_FragCoord.z,0,1);
   }
@@ -103,7 +176,7 @@ class MeshDrawer
 		// After you compile and link your mesh shader program (e.g., after calling
 		// InitShaderProgram and storing the result in this.prog), cache the extra
 		// credit uniform locations:
-		//   if (typeof EC !== 'undefined') EC.ecCacheMeshUniforms(gl, this.prog);
+		if (typeof EC !== 'undefined') EC.ecCacheMeshUniforms(gl, this.prog);
 		// This is safe to call even before you paste the shader snippets (it will
 		// just log a warning once and no-op on every ecUploadMeshUniforms call).
 		// ===========================
@@ -164,17 +237,16 @@ class MeshDrawer
     gl.activeTexture(gl.TEXTURE0);
     gl.bindTexture(gl.TEXTURE_2D, this.texture);
 
-    gl.drawArrays(gl.TRIANGLES, 0, this.numTriangles * 3); // 3 vertices per triangle
-
-
 		// ==== EXTRA CREDIT HOOK ====
 		// After you call gl.useProgram(this.prog) and before your gl.drawArrays call,
 		// upload the extra credit uniforms:
-		//   if (typeof EC !== 'undefined') EC.ecUploadMeshUniforms(gl);
+		if (typeof EC !== 'undefined') EC.ecUploadMeshUniforms(gl);
 		// This should be called AFTER you bind your texture (so uEcTexSize can query
 		// the bound texture's dimensions), and AFTER useProgram (so the uniforms are
 		// uploaded to the active program).
 		// ===========================
+
+    gl.drawArrays(gl.TRIANGLES, 0, this.numTriangles * 3); // 3 vertices per triangle
 
 	}
 
@@ -200,7 +272,7 @@ class MeshDrawer
 		// ==== EXTRA CREDIT HOOK ====
 		// After you create/bind your texture and upload the image with texImage2D above,
 		// call the extra credit filter mode function:
-		//   if (typeof EC !== 'undefined') EC.ecApplyFilterMode(gl);
+		if (typeof EC !== 'undefined') EC.ecApplyFilterMode(gl);
 		// This must run AFTER gl.bindTexture(gl.TEXTURE_2D, yourTexture), because
 		// texParameteri affects the currently bound texture, not a texture object handle.
 		// ===========================

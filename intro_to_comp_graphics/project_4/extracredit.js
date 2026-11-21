@@ -94,7 +94,7 @@ EC.onEnableChange = function(checkbox) {
 
 	childControls.forEach(id => {
 		const elem = document.getElementById(id);
-		if (elem && !elem.disabled) { // Don't override permanent disables (e.g., shader compile failure)
+		if (elem) {
 			elem.disabled = !EC.enabled;
 		}
 	});
